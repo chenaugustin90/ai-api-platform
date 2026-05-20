@@ -52,6 +52,7 @@ Manual Render settings:
 ```bash
 Root directory: backend
 Runtime: Python
+Python version: 3.11.9
 Build command: python -m pip install -r requirements.txt
 Start command: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
@@ -62,7 +63,11 @@ The same start command is also available in `backend/Procfile`:
 web: python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
 ```
 
-`backend/runtime.txt` pins Python 3.9 for Render-compatible runtime selection.
+Python is pinned to `3.11.9` in three places so Render does not fall back to its latest default runtime:
+
+- `PYTHON_VERSION=3.11.9` in `render.yaml`
+- `.python-version` at the repository root
+- `backend/.python-version` for services whose Render root directory is `backend`
 
 ## Backend Environment
 
@@ -71,6 +76,7 @@ Set these Render environment variables. Use Render secret env vars for any value
 ```bash
 APP_NAME="AI API Platform"
 APP_ENV=production
+PYTHON_VERSION=3.11.9
 SECRET_KEY=<secret: generate a long random value>
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 DATABASE_URL=sqlite:///./ai_platform.db
