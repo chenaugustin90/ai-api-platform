@@ -1,0 +1,14 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - paragraph [ref=e6]: AI API Platform
+    - heading "Route text, image, and video models through one metered API." [level=1] [ref=e7]
+  - generic [ref=e9]:
+    - heading "Login" [level=2] [ref=e10]
+    - generic [ref=e11]:
+      - textbox "Email" [ref=e12]
+      - textbox "Password" [ref=e13]
+      - button "Login" [ref=e14] [cursor=pointer]
+      - paragraph [ref=e15]:
+        - text: Need an account?
+        - link "Register" [ref=e16] [cursor=pointer]:
+          - /url: /register

@@ -1,0 +1,38 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "AI API Platform" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e11]: AI API Platform
+      - button "Logout" [ref=e13] [cursor=pointer]:
+        - img [ref=e14]
+        - text: Logout
+  - generic [ref=e17]:
+    - navigation [ref=e18]:
+      - link "Dashboard" [ref=e19] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e20]
+        - text: Dashboard
+      - link "Pricing" [ref=e25] [cursor=pointer]:
+        - /url: /pricing
+        - img [ref=e26]
+        - text: Pricing
+      - link "API Docs" [ref=e28] [cursor=pointer]:
+        - /url: /docs
+        - img [ref=e29]
+        - text: API Docs
+      - link "Images" [ref=e34] [cursor=pointer]:
+        - /url: /images
+        - img [ref=e35]
+        - text: Images
+      - link "Videos" [ref=e39] [cursor=pointer]:
+        - /url: /videos
+        - img [ref=e40]
+        - text: Videos
+      - link "Usage" [ref=e43] [cursor=pointer]:
+        - /url: /usage
+        - img [ref=e44]
+        - text: Usage
+    - main [ref=e46]:
+      - paragraph [ref=e47]: Loading dashboard...

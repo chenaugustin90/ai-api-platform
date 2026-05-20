@@ -1,0 +1,15 @@
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - paragraph [ref=e6]: AI API Platform
+    - heading "Launch a credit-metered AI platform with provider routing built in." [level=1] [ref=e7]
+  - generic [ref=e9]:
+    - heading "Register" [level=2] [ref=e10]
+    - generic [ref=e11]:
+      - textbox "Full name" [ref=e12]
+      - textbox "Email" [ref=e13]
+      - textbox "Password" [ref=e14]
+      - button "Create account" [ref=e15] [cursor=pointer]
+      - paragraph [ref=e16]:
+        - text: Already registered?
+        - link "Login" [ref=e17] [cursor=pointer]:
+          - /url: /login

@@ -1,0 +1,54 @@
+- generic [ref=e32]:
+  - banner [ref=e33]:
+    - generic [ref=e34]:
+      - link "AI API Platform" [ref=e35] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e36]
+        - text: AI API Platform
+      - generic [ref=e39]:
+        - generic [ref=e40]: mock-ui-1779174237@example.com
+        - button "Logout" [ref=e41] [cursor=pointer]:
+          - img [ref=e42]
+          - text: Logout
+  - generic [ref=e45]:
+    - navigation [ref=e46]:
+      - link "Dashboard" [ref=e47] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e48]
+        - text: Dashboard
+      - link "Pricing" [ref=e53] [cursor=pointer]:
+        - /url: /pricing
+        - img [ref=e54]
+        - text: Pricing
+      - link "API Docs" [ref=e56] [cursor=pointer]:
+        - /url: /docs
+        - img [ref=e57]
+        - text: API Docs
+      - link "Images" [ref=e62] [cursor=pointer]:
+        - /url: /images
+        - img [ref=e63]
+        - text: Images
+      - link "Videos" [ref=e67] [cursor=pointer]:
+        - /url: /videos
+        - img [ref=e68]
+        - text: Videos
+      - link "Usage" [ref=e71] [cursor=pointer]:
+        - /url: /usage
+        - img [ref=e72]
+        - text: Usage
+    - main [ref=e74]:
+      - generic [ref=e106]:
+        - heading "Image generation" [level=1] [ref=e107]
+        - generic [ref=e108]:
+          - textbox "API key optional in mock mode" [ref=e109]
+          - generic [ref=e110]:
+            - combobox [ref=e111]:
+              - option "openai" [selected]
+              - option "flux"
+            - textbox "Model override" [ref=e112]
+            - textbox "Size or duration" [ref=e113]: 1024x1024
+          - textbox "Prompt" [ref=e114]: placeholder image without user api key
+          - button "Generate image" [active] [ref=e115] [cursor=pointer]:
+            - img [ref=e116]
+            - text: Generate image
+          - img "placeholder image without user api key" [ref=e119]

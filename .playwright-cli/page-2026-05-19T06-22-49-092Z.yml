@@ -1,0 +1,62 @@
+- generic [ref=e106]:
+  - banner [ref=e107]:
+    - generic [ref=e108]:
+      - link "AI API Platform" [ref=e109] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e110]
+        - text: AI API Platform
+      - generic [ref=e113]:
+        - generic [ref=e114]: ui3-1779171744@example.com
+        - button "Logout" [ref=e115] [cursor=pointer]:
+          - img [ref=e116]
+          - text: Logout
+  - generic [ref=e119]:
+    - navigation [ref=e120]:
+      - link "Dashboard" [ref=e121] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e122]
+        - text: Dashboard
+      - link "Pricing" [ref=e127] [cursor=pointer]:
+        - /url: /pricing
+        - img [ref=e128]
+        - text: Pricing
+      - link "API Docs" [ref=e130] [cursor=pointer]:
+        - /url: /docs
+        - img [ref=e131]
+        - text: API Docs
+      - link "Images" [ref=e136] [cursor=pointer]:
+        - /url: /images
+        - img [ref=e137]
+        - text: Images
+      - link "Videos" [ref=e141] [cursor=pointer]:
+        - /url: /videos
+        - img [ref=e142]
+        - text: Videos
+      - link "Usage" [ref=e145] [cursor=pointer]:
+        - /url: /usage
+        - img [ref=e146]
+        - text: Usage
+    - main [ref=e148]:
+      - generic [ref=e149]:
+        - generic [ref=e150]:
+          - heading "Dashboard" [level=1] [ref=e151]
+          - paragraph [ref=e152]: Credits, usage, and recent media generations.
+        - generic [ref=e153]:
+          - generic [ref=e154]:
+            - img [ref=e155]
+            - generic [ref=e159]: 1,000
+            - generic [ref=e160]: Remaining credits
+          - generic [ref=e161]:
+            - img [ref=e162]
+            - generic [ref=e166]: "0"
+            - generic [ref=e167]: Image credits used
+          - generic [ref=e168]:
+            - img [ref=e169]
+            - generic [ref=e172]: "0"
+            - generic [ref=e173]: Video credits used
+        - generic [ref=e174]:
+          - heading "Generated images" [level=2] [ref=e175]
+          - paragraph [ref=e176]: No images yet.
+        - generic [ref=e177]:
+          - heading "Generated videos" [level=2] [ref=e178]
+          - paragraph [ref=e179]: No videos yet.

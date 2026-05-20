@@ -1,0 +1,71 @@
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - generic [ref=e5]:
+      - link "AI API Platform" [ref=e6] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e8]
+        - generic [ref=e11]: AI API Platform
+      - generic [ref=e12]:
+        - generic [ref=e13]: glass-1779174857@example.com
+        - button "Logout" [ref=e14] [cursor=pointer]:
+          - img [ref=e15]
+          - text: Logout
+  - generic [ref=e18]:
+    - navigation [ref=e19]:
+      - link "Dashboard" [ref=e20] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e22]
+        - generic [ref=e27]: Dashboard
+      - link "Pricing" [ref=e28] [cursor=pointer]:
+        - /url: /pricing
+        - img [ref=e30]
+        - generic [ref=e32]: Pricing
+      - link "API Docs" [ref=e33] [cursor=pointer]:
+        - /url: /docs
+        - img [ref=e35]
+        - generic [ref=e40]: API Docs
+      - link "Images" [ref=e41] [cursor=pointer]:
+        - /url: /images
+        - img [ref=e43]
+        - generic [ref=e47]: Images
+      - link "Videos" [ref=e48] [cursor=pointer]:
+        - /url: /videos
+        - img [ref=e50]
+        - generic [ref=e53]: Videos
+      - link "Usage" [ref=e54] [cursor=pointer]:
+        - /url: /usage
+        - img [ref=e56]
+        - generic [ref=e58]: Usage
+    - main [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - paragraph [ref=e62]: AI Studio
+          - heading "Image generation" [level=1] [ref=e63]
+          - paragraph [ref=e64]: Compose cinematic prompts, route across OpenAI or FLUX, and collect generations in a glass masonry board.
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - img [ref=e69]
+              - text: Prompt Studio
+            - generic [ref=e72]: openai / 1024x1024
+          - textbox "Describe an ultra-detailed AI image... cinematic lighting, material, camera, mood, composition" [ref=e73]
+          - generic [ref=e74]:
+            - textbox "API key optional in mock mode" [ref=e75]
+            - combobox [ref=e76]:
+              - option "openai" [selected]
+              - option "flux"
+            - textbox "Size" [ref=e77]: 1024x1024
+          - generic [ref=e78]:
+            - textbox "Model override" [ref=e79]
+            - button "Generate" [disabled] [ref=e80]:
+              - img [ref=e81]
+              - text: Generate
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - generic [ref=e86]:
+              - paragraph [ref=e87]: Gallery
+              - heading "Generated images" [level=2] [ref=e88]
+            - paragraph [ref=e89]: 0 in this session
+          - generic [ref=e90]:
+            - img [ref=e91]
+            - paragraph [ref=e94]: Your generated images will appear here in a masonry studio wall.

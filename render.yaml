@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: ai-api-platform-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: ALLOW_MOCK_PROVIDERS
+        value: false
+      - key: DATABASE_URL
+        value: sqlite:///./ai_platform.db
+      - key: FRONTEND_URL
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: QWEN_API_KEY
+        sync: false
+      - key: FLUX_API_KEY
+        sync: false
+      - key: KLING_API_KEY
+        sync: false
+      - key: RUNWAY_API_KEY
+        sync: false
+      - key: VEO_API_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_STARTER
+        sync: false
+      - key: STRIPE_PRICE_PRO
+        sync: false
