@@ -1,18 +1,18 @@
 {
-  "name": "ai-api-platform-frontend",
+  "name": "ai-api-platform",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
     "build": "vite build",
-    "preview": "vite preview"
+    "dev": "vite --host 0.0.0.0",
+    "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
-    "react-router-dom": "latest",
-    "lucide-react": "latest"
+    "react-router-dom": "latest"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "latest",

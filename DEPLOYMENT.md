@@ -9,24 +9,30 @@ Do not commit real provider keys, Stripe secrets, JWT secrets, or production dat
 
 ## Frontend: Vercel
 
-Use these Vercel settings:
+Use these Vercel settings when the project root is the repository root:
 
 ```bash
-Root directory: frontend
+Root directory: .
 Install command: npm install
 Build command: npm run build
-Output directory: dist
+Output directory: frontend/dist
 ```
 
-`frontend/vercel.json` is already configured for Vite SPA routing:
+The root `vercel.json` is configured for Vite SPA routing and builds the app in `frontend`:
 
 ```json
 {
+  "framework": "vite",
+  "installCommand": "npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist",
+  "outputDirectory": "frontend/dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
 ```
+
+The repository also includes `vite.config.js` at the root, so a Vercel project that is still configured with `vite build` will build the `frontend` app instead of failing at the repository root.
+
+Alternative Vercel setup: set the project root directory to `frontend`, install with `npm install`, build with `npm run build`, and use output directory `dist`.
 
 Set these Vercel environment variables for Production:
 
