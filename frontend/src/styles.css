@@ -3376,7 +3376,9 @@ select.field option {
 .mobile-menu-button {
   display: none;
   width: 2.75rem;
+  min-width: 2.75rem;
   height: 2.75rem;
+  flex: 0 0 2.75rem;
   place-items: center;
   border: 1px solid rgba(190, 250, 255, 0.16);
   border-radius: 999px;
@@ -3384,6 +3386,16 @@ select.field option {
   background: rgba(255, 255, 255, 0.075);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 12px 32px rgba(0, 0, 0, 0.24);
   backdrop-filter: blur(18px);
+}
+
+.header-logout {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .header-logout {
+    display: inline-flex;
+  }
 }
 
 .mobile-nav-backdrop {
@@ -3431,7 +3443,17 @@ select.field option {
 .playground-console,
 .docs-code-block,
 .landing-wide-code {
+  min-width: 0;
   max-width: 100%;
+}
+
+.page-transition,
+.page-transition > *,
+.playground-page > .grid,
+.playground-page > .grid > *,
+.docs-page > .grid,
+.docs-page > .grid > * {
+  min-width: 0;
 }
 
 .lg-control,
@@ -3486,6 +3508,12 @@ select.field option {
 }
 
 @media (max-width: 767px) {
+  html,
+  body,
+  #root {
+    overflow-x: hidden;
+  }
+
   body {
     background:
       radial-gradient(circle at 18% 12%, rgba(59, 130, 246, 0.24), transparent 22rem),
@@ -3518,10 +3546,14 @@ select.field option {
 
   .mobile-menu-button {
     display: grid;
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
   }
 
   .app-layout {
     display: block;
+    z-index: auto;
     padding: 1rem;
   }
 
@@ -3656,7 +3688,12 @@ select.field option {
     top: 4.75rem;
     z-index: 18;
     display: flex;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior-inline: contain;
     padding: 0.55rem;
     scroll-snap-type: x mandatory;
   }
@@ -3675,7 +3712,8 @@ select.field option {
   .playground-json,
   .landing-wide-code pre {
     font-size: 0.76rem;
-    white-space: pre;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
   }
 
   .playground-toolbar,

@@ -49,7 +49,7 @@ export default function Layout() {
             <span className="hidden max-w-[260px] truncate rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[#A1A1AA] sm:inline">{user?.email}</span>
             <GlassButton
               variant="secondary"
-              className="hidden sm:inline-flex"
+              className="header-logout hidden sm:inline-flex"
               onClick={() => {
                 logout()
                 navigate('/login')
