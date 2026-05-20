@@ -1,8 +1,7 @@
 import { Check, Copy, FileCode2, KeyRound, Rocket, ShieldCheck } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { GlassCard } from '../components/ui'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+import { API_URL } from '../api/client'
 
 const sections = [
   ['Quick start', 'quick-start'],

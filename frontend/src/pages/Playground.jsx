@@ -1,9 +1,7 @@
 import { Check, Clock3, Code2, Copy, Play, Sparkles, TerminalSquare, Zap } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { MOCK_PROVIDERS_ENABLED, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
+import { API_URL, MOCK_PROVIDERS_ENABLED, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 const ENDPOINTS = {
   text: {

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 60 * 24
     database_url: str = "sqlite:///./ai_platform.db"
     frontend_url: AnyHttpUrl | str = "http://localhost:5173"
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,https://ai-api-platform.vercel.app"
 
     openai_api_key: str | None = None
     deepseek_api_key: str | None = None

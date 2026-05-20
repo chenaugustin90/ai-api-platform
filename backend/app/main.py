@@ -21,6 +21,7 @@ allowed_origins.update(origin.strip().rstrip("/") for origin in settings.cors_or
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted(allowed_origins),
+    allow_origin_regex=r"^https://[a-zA-Z0-9-]+\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,6 +39,7 @@ def health():
 
 
 app.include_router(auth.router, prefix="/api")
+app.include_router(auth.router)
 app.include_router(api_keys.router, prefix="/api")
 app.include_router(generate.router, prefix="/api")
 app.include_router(usage.router, prefix="/api")

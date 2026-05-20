@@ -37,7 +37,7 @@ Alternative Vercel setup: set the project root directory to `frontend`, install 
 Set these Vercel environment variables for Production:
 
 ```bash
-VITE_API_URL=https://YOUR_RENDER_SERVICE.onrender.com
+VITE_API_URL=https://ai-api-platform-pnut.onrender.com
 VITE_ALLOW_MOCK_PROVIDERS=false
 ```
 
@@ -80,8 +80,8 @@ PYTHON_VERSION=3.11.9
 SECRET_KEY=<secret: generate a long random value>
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 DATABASE_URL=sqlite:///./ai_platform.db
-FRONTEND_URL=https://YOUR_VERCEL_APP.vercel.app
-CORS_ORIGINS=https://YOUR_VERCEL_APP.vercel.app
+FRONTEND_URL=https://ai-api-platform.vercel.app
+CORS_ORIGINS=https://ai-api-platform.vercel.app
 ALLOW_MOCK_PROVIDERS=false
 
 OPENAI_API_KEY=<secret>
@@ -103,10 +103,10 @@ STRIPE_PRICE_STARTER=<price id>
 STRIPE_PRICE_PRO=<price id>
 ```
 
-`FRONTEND_URL` and `CORS_ORIGINS` must include the final Vercel production domain. For multiple allowed frontend domains, set `CORS_ORIGINS` to a comma-separated list:
+`FRONTEND_URL` and `CORS_ORIGINS` must include the final Vercel production domain. The backend also allows `https://*.vercel.app` preview deployments by regex. For custom domains, set `CORS_ORIGINS` to a comma-separated list:
 
 ```bash
-CORS_ORIGINS=https://YOUR_VERCEL_APP.vercel.app,https://www.yourdomain.com
+CORS_ORIGINS=https://ai-api-platform.vercel.app,https://www.yourdomain.com
 ```
 
 A template is available at `backend/.env.production.example`.
@@ -124,7 +124,7 @@ Then copy the Stripe webhook signing secret into `STRIPE_WEBHOOK_SECRET` on Rend
 ## Production Checklist
 
 - Confirm no real secrets are committed to the repository.
-- Set Vercel `VITE_API_URL` to the Render backend URL.
+- Set Vercel `VITE_API_URL` to `https://ai-api-platform-pnut.onrender.com`.
 - Set Vercel `VITE_ALLOW_MOCK_PROVIDERS=false`.
 - Set Render `FRONTEND_URL` to the Vercel frontend URL.
 - Set Render `CORS_ORIGINS` to every allowed frontend origin.
@@ -136,7 +136,7 @@ Then copy the Stripe webhook signing secret into `STRIPE_WEBHOOK_SECRET` on Rend
 - Verify Render starts with `python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
 - Verify `GET /health` returns `{ "ok": true }`.
 - Register, log in, create an API key, and run one text generation request.
-- Confirm browser requests from the Vercel domain are accepted by CORS.
+- Confirm browser requests from the Vercel production and preview domains are accepted by CORS.
 
 ## Notes
 

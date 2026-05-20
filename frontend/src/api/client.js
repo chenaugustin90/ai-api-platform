@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+export const API_URL = (import.meta.env.VITE_API_URL || 'https://ai-api-platform-pnut.onrender.com').replace(/\/$/, '')
 export const MOCK_PROVIDERS_ENABLED = import.meta.env.VITE_ALLOW_MOCK_PROVIDERS === 'true'
 
 export function getToken() {
