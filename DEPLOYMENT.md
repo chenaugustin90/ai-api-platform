@@ -52,14 +52,14 @@ Manual Render settings:
 ```bash
 Root directory: backend
 Runtime: Python
-Build command: pip install -r requirements.txt
-Start command: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+Build command: python -m pip install -r requirements.txt
+Start command: python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT
 ```
 
 The same start command is also available in `backend/Procfile`:
 
 ```bash
-web: uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+web: python -m uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
 ```
 
 `backend/runtime.txt` pins Python 3.9 for Render-compatible runtime selection.
@@ -127,7 +127,7 @@ Then copy the Stripe webhook signing secret into `STRIPE_WEBHOOK_SECRET` on Rend
 - Keep `ALLOW_MOCK_PROVIDERS=false` for production provider calls.
 - Run `npm run build` in `frontend`.
 - Run `python3 -m compileall app` in `backend`.
-- Verify Render starts with `uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
+- Verify Render starts with `python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT`.
 - Verify `GET /health` returns `{ "ok": true }`.
 - Register, log in, create an API key, and run one text generation request.
 - Confirm browser requests from the Vercel domain are accepted by CORS.
