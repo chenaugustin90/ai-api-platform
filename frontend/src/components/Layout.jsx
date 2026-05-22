@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, FileCode2, Image, KeyRound, LayoutDashboard, LogOut, Menu, SquareTerminal, Video, X } from 'lucide-react'
+import { BarChart3, CreditCard, FileCode2, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, SquareTerminal, Video, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -14,7 +14,8 @@ const links = [
   ['API Docs', '/docs', FileCode2],
   ['Images', '/images', Image],
   ['Videos', '/videos', Video],
-  ['Usage', '/usage', BarChart3]
+  ['Usage', '/usage', BarChart3],
+  ['AI Providers', '/settings/providers', Settings]
 ]
 
 export default function Layout() {

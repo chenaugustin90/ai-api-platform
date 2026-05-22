@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { api, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
 import EmptyState from '../components/EmptyState'
 import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
-import { CalendarClock, Check, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, Play, Sparkles, TerminalSquare, Video, Wand2 } from 'lucide-react'
+import { AlertTriangle, CalendarClock, Check, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, Play, Settings, Sparkles, TerminalSquare, Video, Wand2 } from 'lucide-react'
 
 const DASHBOARD_EXAMPLES = [
   'Generate a glassmorphic AI product image',
@@ -139,6 +139,7 @@ export default function Dashboard() {
   const generatedImages = data.generated_images || []
   const generatedVideos = data.generated_videos || []
   const hasGenerations = generatedText.length + generatedImages.length + generatedVideos.length > 0
+  const missingProviders = getMissingProviders(data.provider_status)
   return (
     <div className="space-y-6">
       {showCheckoutSuccess && (
@@ -152,6 +153,7 @@ export default function Dashboard() {
         <h1 className="title-gradient text-3xl font-bold sm:text-4xl">Dashboard</h1>
         <p className="muted mt-2 text-sm">Credits, usage, and recent media generations.</p>
       </div>
+      {missingProviders.length > 0 && <ProviderWarning missingProviders={missingProviders} />}
       <DashboardGenerator
         generator={generator}
         history={generatorHistory}
@@ -179,6 +181,42 @@ export default function Dashboard() {
       <Gallery title="Generated images" items={generatedImages} type="image" />
       <Gallery title="Generated videos" items={generatedVideos} type="video" />
     </div>
+  )
+}
+
+function getMissingProviders(providerStatus = {}) {
+  const labels = { openai: 'OpenAI', deepseek: 'DeepSeek', claude: 'Claude' }
+  return Object.entries(labels)
+    .filter(([id]) => providerStatus[id] === false)
+    .map(([id, name]) => ({ id, name, status: 'missing' }))
+}
+
+function ProviderWarning({ missingProviders }) {
+  return (
+    <GlassCard as="section" className="provider-warning-card p-5">
+      <div className="provider-warning-main">
+        <span className="provider-warning-icon">
+          <AlertTriangle className="h-5 w-5" />
+        </span>
+        <div>
+          <p className="eyebrow mb-1">Provider not configured</p>
+          <h2 className="text-xl font-bold text-white">Some AI providers need setup</h2>
+          <p className="muted mt-1 text-sm">Add the missing Render environment variables, redeploy, then run a connection test.</p>
+        </div>
+      </div>
+      <div className="provider-warning-list">
+        {missingProviders.map((provider) => (
+          <span key={provider.id} className="provider-warning-pill">
+            {provider.name}
+            <small>{provider.status}</small>
+          </span>
+        ))}
+      </div>
+      <GlassButton as={Link} to="/settings/providers" variant="secondary">
+        <Settings className="h-4 w-4" />
+        Setup providers
+      </GlassButton>
+    </GlassCard>
   )
 }
 

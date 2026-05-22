@@ -13,6 +13,7 @@ import ImageGeneration from './pages/ImageGeneration'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Playground from './pages/Playground'
+import ProviderSettings from './pages/ProviderSettings'
 import Pricing from './pages/Pricing'
 import Register from './pages/Register'
 import Usage from './pages/Usage'
@@ -36,7 +37,8 @@ const router = createBrowserRouter([
       { path: '/docs', element: <Docs /> },
       { path: '/images', element: <ImageGeneration /> },
       { path: '/videos', element: <VideoGeneration /> },
-      { path: '/usage', element: <Usage /> }
+      { path: '/usage', element: <Usage /> },
+      { path: '/settings/providers', element: <ProviderSettings /> }
     ]
   }
 ])

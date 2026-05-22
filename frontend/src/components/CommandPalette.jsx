@@ -1,4 +1,4 @@
-import { Image, KeyRound, LayoutDashboard, Search, Sparkles, SquareTerminal, Video, WalletCards, X } from 'lucide-react'
+import { Image, KeyRound, LayoutDashboard, Search, Settings, Sparkles, SquareTerminal, Video, WalletCards, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
@@ -33,6 +33,7 @@ export default function CommandPalette() {
     { label: 'Open API keys', hint: 'Manage developer access keys', icon: KeyRound, run: () => navigate('/api-keys') },
     { label: 'Open usage', hint: 'View usage timeline and keys', icon: WalletCards, run: () => navigate('/usage') },
     { label: 'Open dashboard', hint: 'Return to command center', icon: LayoutDashboard, run: () => navigate('/dashboard') },
+    { label: 'Open AI providers', hint: 'Check provider setup and connection tests', icon: Settings, run: () => navigate('/settings/providers') },
     {
       label: 'Create API key',
       hint: 'Create a key from anywhere',
