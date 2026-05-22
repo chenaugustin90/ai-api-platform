@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     anthropic_base_url: str = "https://api.anthropic.com/v1"
     qwen_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     flux_base_url: str = "https://api.bfl.ai/v1"
-    openai_image_model: str = "gpt-image-1.5"
+    openai_image_model: str = "gpt-image-2"
     allow_mock_providers: bool = True
     stability_api_key: str | None = None
     kling_api_key: str | None = None

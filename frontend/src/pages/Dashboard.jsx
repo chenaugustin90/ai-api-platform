@@ -31,7 +31,7 @@ const GENERATOR_CONFIG = {
     credits: 10,
     providers: ['openai'],
     models: {
-      openai: ['gpt-image-1.5', 'gpt-image-2', 'gpt-image-1']
+      openai: ['gpt-image-2', 'gpt-image-1.5', 'gpt-image-1']
     },
     prompt: 'A cinematic VisionOS glass console for an AI API platform',
     extra: { size: '1024x1024' }

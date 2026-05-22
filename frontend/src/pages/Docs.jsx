@@ -44,10 +44,10 @@ const endpointDocs = [
     title: 'Image generation',
     method: 'POST',
     path: '/api/generate/image',
-    description: 'Generate an image with OpenAI or FLUX. Image requests currently debit 10 credits.',
+    description: 'Generate an image with OpenAI or FLUX. Image requests currently debit 10 credits. The configured OpenAI image model can be overridden with OPENAI_IMAGE_MODEL.',
     auth: 'X-API-Key',
-    request: { provider: 'openai', model: 'gpt-image-1.5', prompt: 'A VisionOS glass console for an AI API platform', size: '1024x1024' },
-    response: { id: 42, provider: 'openai', model: 'gpt-image-1.5', status: 'completed', output_url: 'https://cdn.example.com/image.png' }
+    request: { provider: 'openai', model: 'gpt-image-2', prompt: 'A VisionOS glass console for an AI API platform', size: '1024x1024' },
+    response: { id: 42, provider: 'openai', model: 'gpt-image-2', status: 'completed', output_url: 'https://cdn.example.com/image.png' }
   },
   {
     id: 'video',

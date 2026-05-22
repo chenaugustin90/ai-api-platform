@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import re
 import time
+import logging
 
 import httpx
 from fastapi import HTTPException
 
 from app.core.config import get_settings
 from app.providers.base import ProviderResult
+from app.providers.utils import provider_not_configured, provider_request_failed
 
 settings = get_settings()
+logger = logging.getLogger("app.providers")
+OPENAI_IMAGE_FALLBACK_MODEL = "gpt-image-1.5"
 
 IMAGE_DEFAULT_MODELS = {
     "openai": settings.openai_image_model,
@@ -28,9 +32,7 @@ async def generate_image(provider: str, prompt: str, model: str | None, size: st
 
 async def _openai_image(prompt: str, model: str, size: str) -> ProviderResult:
     if not settings.openai_api_key:
-        if not settings.allow_mock_providers:
-            raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not configured")
-        return _mock_image("openai", model, prompt)
+        return provider_not_configured("openai", model, prompt, _mock_image)
     payload = {"model": model, "prompt": prompt, "size": size, "n": 1}
     async with httpx.AsyncClient(timeout=120) as client:
         response = await client.post(
@@ -38,8 +40,21 @@ async def _openai_image(prompt: str, model: str, size: str) -> ProviderResult:
             headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
             json=payload,
         )
+        if _should_fallback_openai_image_model(response, model):
+            logger.warning(
+                "OpenAI image model %s is unavailable; falling back to %s.",
+                model,
+                OPENAI_IMAGE_FALLBACK_MODEL,
+            )
+            payload["model"] = OPENAI_IMAGE_FALLBACK_MODEL
+            response = await client.post(
+                f"{settings.openai_base_url.rstrip('/')}/images/generations",
+                headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
+                json=payload,
+            )
+            model = OPENAI_IMAGE_FALLBACK_MODEL
     if response.status_code >= 400:
-        raise HTTPException(status_code=502, detail={"provider": "openai", "error": response.text})
+        raise provider_request_failed("openai", response.text)
     data = response.json()
     image = data["data"][0]
     output = image.get("url")
@@ -51,9 +66,7 @@ async def _openai_image(prompt: str, model: str, size: str) -> ProviderResult:
 
 async def _flux_image(prompt: str, model: str, size: str) -> ProviderResult:
     if not settings.flux_api_key:
-        if not settings.allow_mock_providers:
-            raise HTTPException(status_code=500, detail="FLUX_API_KEY is not configured")
-        return _mock_image("flux", model, prompt)
+        return provider_not_configured("flux", model, prompt, _mock_image)
 
     width, height = _parse_size(size)
     endpoint = _flux_endpoint(model)
@@ -62,7 +75,7 @@ async def _flux_image(prompt: str, model: str, size: str) -> ProviderResult:
     async with httpx.AsyncClient(timeout=120) as client:
         submit = await client.post(endpoint, headers=headers, json=payload)
         if submit.status_code >= 400:
-            raise HTTPException(status_code=502, detail={"provider": "flux", "error": submit.text})
+            raise provider_request_failed("flux", submit.text)
         submitted = submit.json()
         polling_url = submitted.get("polling_url")
         request_id = submitted.get("id")
@@ -73,14 +86,14 @@ async def _flux_image(prompt: str, model: str, size: str) -> ProviderResult:
         while time.monotonic() < deadline:
             poll = await client.get(polling_url, headers={"accept": "application/json", "x-key": settings.flux_api_key})
             if poll.status_code >= 400:
-                raise HTTPException(status_code=502, detail={"provider": "flux", "error": poll.text})
+                raise provider_request_failed("flux", poll.text)
             data = poll.json()
             status = data.get("status")
             if status == "Ready":
                 output = (data.get("result") or {}).get("sample")
                 return ProviderResult(provider="flux", model=model, output_url=output, usage={"request_id": request_id}, status="completed")
             if status in {"Error", "Failed"}:
-                raise HTTPException(status_code=502, detail={"provider": "flux", "error": data})
+                raise provider_request_failed("flux", str(data))
             await _sleep(0.75)
 
     return ProviderResult(provider="flux", model=model, status="queued", usage={"request_id": request_id}, output_url=None)
@@ -89,6 +102,17 @@ async def _flux_image(prompt: str, model: str, size: str) -> ProviderResult:
 def _flux_endpoint(model: str) -> str:
     slug = model.strip().lstrip("/")
     return f"{settings.flux_base_url.rstrip('/')}/{slug}"
+
+
+def _should_fallback_openai_image_model(response: httpx.Response, model: str) -> bool:
+    if response.status_code not in {400, 404}:
+        return False
+    if model == OPENAI_IMAGE_FALLBACK_MODEL:
+        return False
+    if not model.startswith("gpt-image-"):
+        return False
+    error_text = response.text.lower()
+    return any(marker in error_text for marker in ("model", "not found", "unsupported", "does not exist", "invalid"))
 
 
 def _parse_size(size: str) -> tuple[int, int]:
@@ -111,8 +135,6 @@ async def _sleep(seconds: float) -> None:
 
 
 def _mock_image(provider: str, model: str, prompt: str) -> ProviderResult:
-    if not settings.allow_mock_providers:
-        raise HTTPException(status_code=500, detail=f"{provider.upper()} API key is not configured")
     encoded = prompt.replace(" ", "+")[:120]
     url = f"https://placehold.co/1024x1024/png?text={provider}:{encoded}"
     return ProviderResult(provider=provider, model=model, output_url=url)

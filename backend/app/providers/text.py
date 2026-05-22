@@ -5,6 +5,7 @@ from fastapi import HTTPException
 
 from app.core.config import get_settings
 from app.providers.base import ProviderResult
+from app.providers.utils import provider_not_configured, provider_request_failed
 
 settings = get_settings()
 
@@ -45,7 +46,7 @@ async def generate_text(provider: str, prompt: str, model: str | None, max_token
 
 async def _openai(prompt: str, model: str, max_tokens: int) -> ProviderResult:
     if not settings.openai_api_key:
-        return _mock_text("openai", model, prompt)
+        return provider_not_configured("openai", model, prompt, _mock_text)
     return await _openai_compatible(
         "openai",
         f"{settings.openai_base_url.rstrip('/')}/chat/completions",
@@ -58,9 +59,7 @@ async def _openai(prompt: str, model: str, max_tokens: int) -> ProviderResult:
 
 async def _claude(prompt: str, model: str, max_tokens: int) -> ProviderResult:
     if not settings.anthropic_api_key:
-        if not settings.allow_mock_providers:
-            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY is not configured")
-        return _mock_text("claude", model, prompt)
+        return provider_not_configured("claude", model, prompt, _mock_text)
 
     payload = {
         "model": model,
@@ -78,7 +77,7 @@ async def _claude(prompt: str, model: str, max_tokens: int) -> ProviderResult:
             json=payload,
         )
     if response.status_code >= 400:
-        raise HTTPException(status_code=502, detail={"provider": "claude", "error": response.text})
+        raise provider_request_failed("claude", response.text)
 
     data = response.json()
     content = data.get("content") or []
@@ -101,9 +100,7 @@ async def _openai_compatible(
     max_tokens: int,
 ) -> ProviderResult:
     if not api_key:
-        if not settings.allow_mock_providers:
-            raise HTTPException(status_code=500, detail=f"{provider.upper()} API key is not configured")
-        return _mock_text(provider, model, prompt)
+        return provider_not_configured(provider, model, prompt, _mock_text)
     payload = {
         "model": model,
         "messages": [{"role": "user", "content": prompt}],
@@ -116,7 +113,7 @@ async def _openai_compatible(
             json=payload,
         )
     if response.status_code >= 400:
-        raise HTTPException(status_code=502, detail={"provider": provider, "error": response.text})
+        raise provider_request_failed(provider, response.text)
     data = response.json()
     return ProviderResult(
         provider=provider,

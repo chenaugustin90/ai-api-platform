@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.db.init_db import init_db
+from app.providers.utils import log_provider_configuration, provider_key_status
 from app.routes import api_keys, auth, billing, dashboard, generate, usage
 
 settings = get_settings()
@@ -31,11 +32,22 @@ app.add_middleware(
 @app.on_event("startup")
 def startup() -> None:
     init_db()
+    log_provider_configuration()
 
 
 @app.get("/health")
 def health():
     return {"ok": True, "service": settings.app_name}
+
+
+@app.get("/health/providers")
+def provider_health():
+    return {
+        "ok": True,
+        "allow_mock_providers": settings.allow_mock_providers,
+        "openai_image_model": settings.openai_image_model,
+        "providers": provider_key_status(),
+    }
 
 
 app.include_router(auth.router, prefix="/api")

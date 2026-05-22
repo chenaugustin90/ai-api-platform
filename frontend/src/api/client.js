@@ -43,9 +43,9 @@ export async function api(path, options = {}) {
   if (token) headers.set('Authorization', `Bearer ${token}`)
   const response = await fetch(`${API_URL}${path}`, { ...options, headers })
   const text = await response.text()
-  const data = text ? JSON.parse(text) : null
+  const data = safeParseJson(text)
   if (!response.ok) {
-    throw new Error(typeof data?.detail === 'string' ? data.detail : JSON.stringify(data?.detail || data))
+    throw new Error(formatApiError(data))
   }
   return data
 }
@@ -56,8 +56,9 @@ export async function apiKeyRequest(path, apiKey, body) {
     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
     body: JSON.stringify(body)
   })
-  const data = await response.json()
-  if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : JSON.stringify(data.detail))
+  const text = await response.text()
+  const data = safeParseJson(text)
+  if (!response.ok) throw new Error(formatApiError(data))
   return data
 }
 
@@ -71,4 +72,22 @@ export async function getOrCreateDevelopmentApiKey() {
   })
   localStorage.setItem('development_api_key', created.key)
   return created.key
+}
+
+function safeParseJson(text) {
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return { detail: text }
+  }
+}
+
+function formatApiError(data) {
+  const detail = data?.detail || data
+  if (typeof detail === 'string') return detail
+  if (Array.isArray(detail)) return detail.map((item) => item.msg || item.message || 'Invalid request').join(', ')
+  if (detail?.provider && detail?.error) return `${detail.provider} request failed. Check provider configuration, model access, and quota.`
+  if (detail?.message) return detail.message
+  return 'Request failed. Please check provider configuration, model access, and credits.'
 }
