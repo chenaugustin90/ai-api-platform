@@ -1,4 +1,4 @@
-import { Image, KeyRound, LayoutDashboard, Search, Settings, Sparkles, SquareTerminal, Video, WalletCards, X } from 'lucide-react'
+import { BookOpen, Image, KeyRound, LayoutDashboard, Search, Settings, Sparkles, SquareTerminal, Video, WalletCards, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
@@ -30,6 +30,7 @@ export default function CommandPalette() {
     { label: 'Generate image', hint: 'Open AI image studio', icon: Image, run: () => navigate('/images') },
     { label: 'Generate video', hint: 'Open motion generation', icon: Video, run: () => navigate('/videos') },
     { label: 'Open playground', hint: 'Test API requests and snippets', icon: SquareTerminal, run: () => navigate('/playground') },
+    { label: 'Open prompt library', hint: 'Save and reuse high-performing prompts', icon: BookOpen, run: () => navigate('/prompt-library') },
     { label: 'Open API keys', hint: 'Manage developer access keys', icon: KeyRound, run: () => navigate('/api-keys') },
     { label: 'Open usage', hint: 'View usage timeline and keys', icon: WalletCards, run: () => navigate('/usage') },
     { label: 'Open dashboard', hint: 'Return to command center', icon: LayoutDashboard, run: () => navigate('/dashboard') },

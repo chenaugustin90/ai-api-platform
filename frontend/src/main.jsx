@@ -5,6 +5,7 @@ import './styles.css'
 import Layout from './components/Layout'
 import LiquidGlassEffects from './components/LiquidGlassEffects'
 import ProtectedRoute from './components/ProtectedRoute'
+import { ToastProvider } from './components/ToastProvider'
 import { AuthProvider } from './context/AuthContext'
 import ApiKeys from './pages/ApiKeys'
 import Dashboard from './pages/Dashboard'
@@ -14,6 +15,7 @@ import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Playground from './pages/Playground'
 import ProviderSettings from './pages/ProviderSettings'
+import PromptLibrary from './pages/PromptLibrary'
 import Pricing from './pages/Pricing'
 import Register from './pages/Register'
 import Usage from './pages/Usage'
@@ -34,6 +36,7 @@ const router = createBrowserRouter([
       { path: '/api-keys', element: <ApiKeys /> },
       { path: '/pricing', element: <Pricing /> },
       { path: '/playground', element: <Playground /> },
+      { path: '/prompt-library', element: <PromptLibrary /> },
       { path: '/docs', element: <Docs /> },
       { path: '/images', element: <ImageGeneration /> },
       { path: '/videos', element: <VideoGeneration /> },
@@ -46,8 +49,10 @@ const router = createBrowserRouter([
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
-      <LiquidGlassEffects />
-      <RouterProvider router={router} />
+      <ToastProvider>
+        <LiquidGlassEffects />
+        <RouterProvider router={router} />
+      </ToastProvider>
     </AuthProvider>
   </React.StrictMode>
 )

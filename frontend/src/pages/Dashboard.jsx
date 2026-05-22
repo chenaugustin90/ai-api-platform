@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
 import EmptyState from '../components/EmptyState'
+import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
-import { AlertTriangle, CalendarClock, Check, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, Play, Settings, Sparkles, TerminalSquare, Video, Wand2 } from 'lucide-react'
+import { AlertTriangle, BookOpen, CalendarClock, Check, Clock3, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, KeyRound, Play, RotateCcw, Settings, Sparkles, SquareTerminal, TerminalSquare, Video, Wand2, X, Zap } from 'lucide-react'
+import { savePromptToLibrary, saveRecentPromptGlobal } from '../utils/promptLibrary'
 
 const DASHBOARD_EXAMPLES = [
   'Generate a glassmorphic AI product image',
@@ -39,17 +41,33 @@ const GENERATOR_CONFIG = {
 }
 
 export default function Dashboard() {
+  const toast = useToast()
   const [data, setData] = useState(null)
+  const [usageEvents, setUsageEvents] = useState([])
   const [searchParams, setSearchParams] = useSearchParams()
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false)
   const [generator, setGenerator] = useState(() => initialGeneratorState())
   const [generatorHistory, setGeneratorHistory] = useState([])
   const [generatorError, setGeneratorError] = useState('')
   const [generatorLoading, setGeneratorLoading] = useState(false)
+  const [generationProgress, setGenerationProgress] = useState(0)
+  const [generationResult, setGenerationResult] = useState(null)
+  const [streamedText, setStreamedText] = useState('')
+  const [chartPeriod, setChartPeriod] = useState('daily')
+  const abortRef = useRef(null)
 
   useEffect(() => {
-    api('/api/dashboard').then(setData)
+    refreshDashboard()
   }, [])
+
+  async function refreshDashboard() {
+    const [dashboardData, eventsData] = await Promise.all([
+      api('/api/dashboard'),
+      api('/api/usage/events').catch(() => [])
+    ])
+    setData(dashboardData)
+    setUsageEvents(eventsData)
+  }
 
   useEffect(() => {
     if (searchParams.get('checkout') !== 'success') return
@@ -88,7 +106,7 @@ export default function Dashboard() {
   }
 
   async function runGeneration(event) {
-    event.preventDefault()
+    event?.preventDefault()
     const config = GENERATOR_CONFIG[generator.endpoint]
     const payload = {
       provider: generator.provider,
@@ -99,16 +117,26 @@ export default function Dashboard() {
 
     if (!payload.prompt) {
       setGeneratorError('Prompt is required.')
+      toast.error('Prompt is required.')
       return
     }
 
     setGeneratorError('')
     setGeneratorLoading(true)
+    setGenerationProgress(8)
+    setGenerationResult(null)
+    setStreamedText('')
+    saveRecentPromptGlobal(payload.prompt)
+    abortRef.current = new AbortController()
+    const progressTimer = window.setInterval(() => {
+      setGenerationProgress((current) => Math.min(92, current + Math.max(3, Math.round((92 - current) * 0.18))))
+    }, 420)
+    toast.loading('Routing request through the selected provider.', 'Generating')
     window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'generating' } }))
 
     try {
       const started = performance.now()
-      const result = await sendDashboardGeneration(config.path, payload)
+      const result = await sendDashboardGeneration(config.path, payload, abortRef.current.signal)
       const elapsed = Math.round(performance.now() - started)
       const record = {
         id: result.id || Date.now(),
@@ -122,15 +150,59 @@ export default function Dashboard() {
         credits: config.credits,
         elapsed
       }
+      setGenerationProgress(100)
+      setGenerationResult(record)
+      animateStream(record.text || (record.output_url ? 'Image generation completed.' : 'Generation completed.'))
       setGeneratorHistory((current) => [record, ...current].slice(0, 6))
-      const refreshed = await api('/api/dashboard')
-      setData(refreshed)
+      await refreshDashboard()
+      toast.success(`${config.label} generation completed.`)
     } catch (err) {
-      setGeneratorError(err.message)
+      if (err.name === 'AbortError') {
+        setGeneratorError('Generation canceled.')
+        toast.info('Generation canceled.')
+      } else {
+        setGeneratorError(err.message)
+        toast.error(err.message)
+      }
     } finally {
+      window.clearInterval(progressTimer)
       setGeneratorLoading(false)
+      abortRef.current = null
       window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'idle' } }))
     }
+  }
+
+  function cancelGeneration() {
+    abortRef.current?.abort()
+    setGeneratorLoading(false)
+    setGenerationProgress(0)
+  }
+
+  function retryGeneration() {
+    runGeneration()
+  }
+
+  async function copyResult() {
+    const value = generationResult?.text || generationResult?.output_url || ''
+    if (!value) return
+    await navigator.clipboard?.writeText(value)
+    toast.success('Result copied.')
+  }
+
+  function favoritePrompt() {
+    savePromptToLibrary(generator.prompt, { favorite: true })
+    toast.success('Prompt saved to library.')
+  }
+
+  function animateStream(text) {
+    const cleanText = text || ''
+    setStreamedText('')
+    let index = 0
+    const timer = window.setInterval(() => {
+      index += Math.max(1, Math.ceil(cleanText.length / 42))
+      setStreamedText(cleanText.slice(0, index))
+      if (index >= cleanText.length) window.clearInterval(timer)
+    }, 28)
   }
 
   if (!data) return <p className="muted animate-pulse text-sm">Loading dashboard...</p>
@@ -140,6 +212,8 @@ export default function Dashboard() {
   const generatedVideos = data.generated_videos || []
   const hasGenerations = generatedText.length + generatedImages.length + generatedVideos.length > 0
   const missingProviders = getMissingProviders(data.provider_status)
+  const recentGenerations = buildRecentGenerations(generatorHistory, generatedText, generatedImages, generatedVideos)
+  const chartData = buildUsageChartData(usageEvents, chartPeriod)
   return (
     <div className="space-y-6">
       {showCheckoutSuccess && (
@@ -159,13 +233,25 @@ export default function Dashboard() {
         history={generatorHistory}
         error={generatorError}
         loading={generatorLoading}
+        progress={generationProgress}
+        result={generationResult}
+        streamedText={streamedText}
         onChange={updateGenerator}
         onSubmit={runGeneration}
+        onCancel={cancelGeneration}
+        onRetry={retryGeneration}
+        onCopy={copyResult}
+        onFavoritePrompt={favoritePrompt}
       />
+      <QuickActions />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metric label="Remaining credits" value={usage.credits_remaining} />
         <Metric label="Text credits used" value={usage.by_modality.text || 0} />
         <Metric label="Image credits used" value={usage.by_modality.image || 0} />
+      </div>
+      <div className="dashboard-insights-grid">
+        <UsageChart title="Usage chart" data={chartData} period={chartPeriod} onPeriodChange={setChartPeriod} />
+        <CreditsTrendChart creditsRemaining={usage.credits_remaining} events={usageEvents} />
       </div>
       {data.billing && <BillingStatus billing={data.billing} />}
       {!hasGenerations && generatorHistory.length === 0 && (
@@ -177,6 +263,7 @@ export default function Dashboard() {
           actionHref="/images"
         />
       )}
+      <RecentGenerations items={recentGenerations} />
       <TextHistory title="Text generations" items={[...generatorHistory.filter((item) => item.endpoint === 'text'), ...generatedText]} />
       <Gallery title="Generated images" items={generatedImages} type="image" />
       <Gallery title="Generated videos" items={generatedVideos} type="video" />
@@ -220,6 +307,185 @@ function ProviderWarning({ missingProviders }) {
   )
 }
 
+function QuickActions() {
+  const actions = [
+    { label: 'Generate text', href: '/playground', icon: SquareTerminal },
+    { label: 'Open prompt library', href: '/prompt-library', icon: BookOpen },
+    { label: 'Create API key', href: '/api-keys', icon: KeyRound },
+    { label: 'Provider setup', href: '/settings/providers', icon: Settings },
+  ]
+  return (
+    <div className="quick-actions-grid">
+      {actions.map(({ label, href, icon: Icon }) => (
+        <GlassCard key={label} as={Link} to={href} className="quick-action-card" data-magnetic>
+          <span><Icon className="h-4 w-4" /></span>
+          <strong>{label}</strong>
+        </GlassCard>
+      ))}
+    </div>
+  )
+}
+
+function UsageChart({ title, data, period, onPeriodChange }) {
+  const maxValue = Math.max(1, ...data.map((item) => item.credits))
+  return (
+    <GlassCard as="section" className="dashboard-chart-card p-5">
+      <div className="dashboard-section-head">
+        <div>
+          <p className="eyebrow mb-1">Daily / Weekly / Monthly</p>
+          <h2 className="text-xl font-bold text-white">{title}</h2>
+        </div>
+        <div className="chart-period-control">
+          {['daily', 'weekly', 'monthly'].map((option) => (
+            <button key={option} type="button" className={period === option ? 'is-active' : ''} onClick={() => onPeriodChange(option)}>
+              {option}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="usage-bar-chart" aria-label={title}>
+        {data.map((item) => (
+          <div key={item.label} className="usage-bar-column">
+            <span className="usage-bar-value">{item.credits}</span>
+            <span className="usage-bar" style={{ height: `${Math.max(8, (item.credits / maxValue) * 100)}%` }} />
+            <small>{item.label}</small>
+          </div>
+        ))}
+      </div>
+    </GlassCard>
+  )
+}
+
+function CreditsTrendChart({ creditsRemaining, events }) {
+  const points = buildCreditsTrend(creditsRemaining, events)
+  const maxValue = Math.max(1, ...points.map((point) => point.value))
+  const path = points.map((point, index) => {
+    const x = (index / Math.max(1, points.length - 1)) * 100
+    const y = 100 - (point.value / maxValue) * 82 - 8
+    return `${index === 0 ? 'M' : 'L'} ${x.toFixed(2)} ${y.toFixed(2)}`
+  }).join(' ')
+
+  return (
+    <GlassCard as="section" className="dashboard-chart-card p-5">
+      <div className="dashboard-section-head">
+        <div>
+          <p className="eyebrow mb-1">Credits trend</p>
+          <h2 className="text-xl font-bold text-white">{Number(creditsRemaining).toLocaleString()} remaining</h2>
+        </div>
+        <Zap className="h-5 w-5 text-[#00E5FF]" />
+      </div>
+      <svg className="credits-trend-chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Credits trend chart">
+        <path d={`${path} L 100 100 L 0 100 Z`} className="credits-trend-fill" />
+        <path d={path} className="credits-trend-line" />
+      </svg>
+      <div className="credits-trend-labels">
+        {points.map((point) => <span key={point.label}>{point.label}</span>)}
+      </div>
+    </GlassCard>
+  )
+}
+
+function RecentGenerations({ items }) {
+  return (
+    <GlassCard as="section" className="p-5">
+      <div className="dashboard-section-head mb-4">
+        <div>
+          <p className="eyebrow mb-1">Recent generations</p>
+          <h2 className="text-xl font-bold text-white">Latest activity</h2>
+        </div>
+        <Clock3 className="h-5 w-5 text-[#00E5FF]" />
+      </div>
+      {items.length === 0 ? (
+        <EmptyState
+          title="No generations yet"
+          description="Start from a prompt suggestion or use a quick action to create your first result."
+          examples={DASHBOARD_EXAMPLES}
+          actionLabel="Open Playground"
+          actionHref="/playground"
+        />
+      ) : (
+        <div className="recent-generation-list">
+          {items.slice(0, 8).map((item) => (
+            <article key={`${item.modality}-${item.id}-${item.created_at || item.elapsed || 0}`} className="recent-generation-item">
+              <span>{item.modality || item.endpoint}</span>
+              <div>
+                <p>{item.text || item.prompt}</p>
+                <small>{item.provider} / {item.model}</small>
+              </div>
+              <strong>{item.status || 'completed'}</strong>
+            </article>
+          ))}
+        </div>
+      )}
+    </GlassCard>
+  )
+}
+
+function buildRecentGenerations(sessionItems, textItems, imageItems, videoItems) {
+  return [
+    ...sessionItems.map((item) => ({ ...item, modality: item.endpoint, created_at: new Date().toISOString() })),
+    ...textItems,
+    ...imageItems,
+    ...videoItems,
+  ].sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+}
+
+function buildUsageChartData(events, period = 'daily') {
+  if (period === 'weekly') {
+    return Array.from({ length: 4 }, (_, index) => {
+      const start = new Date()
+      start.setDate(start.getDate() - (3 - index) * 7)
+      const end = new Date(start)
+      end.setDate(end.getDate() + 6)
+      const credits = events
+        .filter((event) => {
+          const created = new Date(event.created_at)
+          return created >= start && created <= end
+        })
+        .reduce((sum, event) => sum + Number(event.credits_used || 0), 0)
+      return { label: `W${index + 1}`, credits }
+    })
+  }
+
+  if (period === 'monthly') {
+    return Array.from({ length: 6 }, (_, index) => {
+      const date = new Date()
+      date.setMonth(date.getMonth() - (5 - index), 1)
+      const month = date.getMonth()
+      const year = date.getFullYear()
+      const credits = events
+        .filter((event) => {
+          const created = new Date(event.created_at)
+          return created.getMonth() === month && created.getFullYear() === year
+        })
+        .reduce((sum, event) => sum + Number(event.credits_used || 0), 0)
+      return { label: date.toLocaleDateString(undefined, { month: 'short' }), credits }
+    })
+  }
+
+  const labels = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date()
+    date.setDate(date.getDate() - (6 - index))
+    return date
+  })
+  return labels.map((date) => {
+    const day = date.toISOString().slice(0, 10)
+    const credits = events
+      .filter((event) => String(event.created_at || '').slice(0, 10) === day)
+      .reduce((sum, event) => sum + Number(event.credits_used || 0), 0)
+    return { label: date.toLocaleDateString(undefined, { weekday: 'short' }), credits }
+  })
+}
+
+function buildCreditsTrend(creditsRemaining, events) {
+  const daily = buildUsageChartData(events, 'daily')
+  let running = Number(creditsRemaining || 0) + daily.reduce((sum, item) => sum + item.credits, 0)
+  return daily.map((item) => {
+    running -= item.credits
+    return { label: item.label, value: running }
+  })
+}
+
 function initialGeneratorState() {
   const config = GENERATOR_CONFIG.text
   const provider = config.providers[0]
@@ -231,21 +497,22 @@ function initialGeneratorState() {
   }
 }
 
-async function sendDashboardGeneration(path, payload) {
+async function sendDashboardGeneration(path, payload, signal) {
   let key = await getOrCreateDevelopmentApiKey()
   try {
-    return await apiKeyRequest(path, key, payload)
+    return await apiKeyRequest(path, key, payload, { signal })
   } catch (err) {
     if (!/api key|unauthorized|forbidden/i.test(err.message)) throw err
     localStorage.removeItem('development_api_key')
     key = await getOrCreateDevelopmentApiKey()
-    return apiKeyRequest(path, key, payload)
+    return apiKeyRequest(path, key, payload, { signal })
   }
 }
 
-function DashboardGenerator({ generator, history, error, loading, onChange, onSubmit }) {
+function DashboardGenerator({ generator, history, error, loading, progress, result, streamedText, onChange, onSubmit, onCancel, onRetry, onCopy, onFavoritePrompt }) {
   const config = GENERATOR_CONFIG[generator.endpoint]
   const modelOptions = config.models[generator.provider] || []
+  const statusLabel = loading ? progress < 35 ? 'Preparing request' : progress < 75 ? 'Provider thinking' : 'Finalizing output' : progress === 100 ? 'Completed' : `${config.credits} credits`
 
   return (
     <GlassCard as="form" className="dashboard-generator p-5" onSubmit={onSubmit}>
@@ -259,7 +526,7 @@ function DashboardGenerator({ generator, history, error, loading, onChange, onSu
         </div>
         <span className={`dashboard-generator-status ${loading ? 'is-loading' : ''}`}>
           <Sparkles className="h-3.5 w-3.5" />
-          {loading ? 'Generating' : `${config.credits} credits`}
+          {loading ? statusLabel : `${config.credits} credits`}
         </span>
       </div>
 
@@ -294,12 +561,53 @@ function DashboardGenerator({ generator, history, error, loading, onChange, onSu
             <p className="text-sm font-semibold text-white">Ready route</p>
             <p className="muted text-xs">{generator.provider} / {generator.model}</p>
           </div>
-          <GlassButton type="submit" disabled={loading}>
-            <Play className="h-4 w-4" />
-            {loading ? 'Generating' : 'Generate'}
-          </GlassButton>
+          <div className="dashboard-generator-actions">
+            <GlassButton type="submit" disabled={loading}>
+              <Play className="h-4 w-4" />
+              {loading ? 'Generating' : 'Generate'}
+            </GlassButton>
+            {loading && (
+              <GlassButton type="button" variant="secondary" onClick={onCancel}>
+                <X className="h-4 w-4" />
+                Cancel
+              </GlassButton>
+            )}
+          </div>
         </div>
       </div>
+
+      {(loading || progress > 0) && (
+        <div className="generation-progress">
+          <div className="generation-progress-top">
+            <span>{statusLabel}</span>
+            <strong>{progress}%</strong>
+          </div>
+          <div className="generation-progress-track">
+            <span style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      )}
+
+      {(result || streamedText) && (
+        <div className="generation-result-panel">
+          <div className="generation-result-head">
+            <span className="provider-section-title">
+              <Sparkles className="h-3.5 w-3.5" />
+              Latest result
+            </span>
+            <div className="generation-result-actions">
+              <button type="button" onClick={onFavoritePrompt} aria-label="Favorite prompt"><Heart className="h-4 w-4" /></button>
+              <button type="button" onClick={onCopy} aria-label="Copy result"><Copy className="h-4 w-4" /></button>
+              <button type="button" onClick={onRetry} aria-label="Retry generation"><RotateCcw className="h-4 w-4" /></button>
+            </div>
+          </div>
+          {result?.output_url ? (
+            <img className="generation-result-image" src={result.output_url} alt={result.prompt} />
+          ) : (
+            <p className="generation-stream-text">{streamedText}<span aria-hidden="true" /></p>
+          )}
+        </div>
+      )}
 
       {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
 

@@ -50,11 +50,12 @@ export async function api(path, options = {}) {
   return data
 }
 
-export async function apiKeyRequest(path, apiKey, body) {
+export async function apiKeyRequest(path, apiKey, body, options = {}) {
   const response = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
-    body: JSON.stringify(body)
+    body: JSON.stringify(body),
+    signal: options.signal
   })
   const text = await response.text()
   const data = safeParseJson(text)

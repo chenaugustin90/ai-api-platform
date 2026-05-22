@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, FileCode2, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, SquareTerminal, Video, X } from 'lucide-react'
+import { BarChart3, BookOpen, CreditCard, FileCode2, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, SquareTerminal, Video, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -9,6 +9,7 @@ import { GlassButton, GlassCard } from './ui'
 const links = [
   ['Dashboard', '/dashboard', LayoutDashboard],
   ['Playground', '/playground', SquareTerminal],
+  ['Prompt Library', '/prompt-library', BookOpen],
   ['API Keys', '/api-keys', KeyRound],
   ['Pricing', '/pricing', CreditCard],
   ['API Docs', '/docs', FileCode2],
