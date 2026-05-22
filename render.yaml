@@ -24,10 +24,16 @@ services:
         sync: false
       - key: DEEPSEEK_API_KEY
         sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
       - key: QWEN_API_KEY
         sync: false
       - key: FLUX_API_KEY
         sync: false
+      - key: ANTHROPIC_BASE_URL
+        value: https://api.anthropic.com/v1
+      - key: OPENAI_IMAGE_MODEL
+        value: gpt-image-1.5
       - key: KLING_API_KEY
         sync: false
       - key: RUNWAY_API_KEY
