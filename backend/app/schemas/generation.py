@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-TextProvider = Literal["openai", "deepseek", "qwen"]
+TextProvider = Literal["openai", "deepseek", "claude", "qwen"]
 ImageProvider = Literal["openai", "flux"]
 VideoProvider = Literal["kling", "runway", "veo"]
 

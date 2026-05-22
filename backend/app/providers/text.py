@@ -11,6 +11,7 @@ settings = get_settings()
 TEXT_DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "deepseek": "deepseek-v4-pro",
+    "claude": "claude-3-5-sonnet-latest",
     "qwen": "qwen-plus",
 }
 
@@ -28,6 +29,8 @@ async def generate_text(provider: str, prompt: str, model: str | None, max_token
             selected_model,
             max_tokens,
         )
+    if provider == "claude":
+        return await _claude(prompt, selected_model, max_tokens)
     if provider == "qwen":
         return await _openai_compatible(
             "qwen",
@@ -51,6 +54,42 @@ async def _openai(prompt: str, model: str, max_tokens: int) -> ProviderResult:
         model,
         max_tokens,
     )
+
+
+async def _claude(prompt: str, model: str, max_tokens: int) -> ProviderResult:
+    if not settings.anthropic_api_key:
+        if not settings.allow_mock_providers:
+            raise HTTPException(status_code=500, detail="ANTHROPIC_API_KEY is not configured")
+        return _mock_text("claude", model, prompt)
+
+    payload = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "messages": [{"role": "user", "content": prompt}],
+    }
+    async with httpx.AsyncClient(timeout=60) as client:
+        response = await client.post(
+            f"{settings.anthropic_base_url.rstrip('/')}/messages",
+            headers={
+                "x-api-key": settings.anthropic_api_key,
+                "anthropic-version": "2023-06-01",
+                "Content-Type": "application/json",
+            },
+            json=payload,
+        )
+    if response.status_code >= 400:
+        raise HTTPException(status_code=502, detail={"provider": "claude", "error": response.text})
+
+    data = response.json()
+    content = data.get("content") or []
+    text = "".join(block.get("text", "") for block in content if block.get("type") == "text")
+    anthropic_usage = data.get("usage") or {}
+    usage = {
+        "prompt_tokens": anthropic_usage.get("input_tokens", 0),
+        "completion_tokens": anthropic_usage.get("output_tokens", 0),
+        "total_tokens": anthropic_usage.get("input_tokens", 0) + anthropic_usage.get("output_tokens", 0),
+    }
+    return ProviderResult(provider="claude", model=model, text=text, usage=usage)
 
 
 async def _openai_compatible(

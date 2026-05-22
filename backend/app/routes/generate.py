@@ -32,6 +32,16 @@ async def text(payload: TextGenerationRequest, auth=Depends(get_api_key_user), d
     completion_tokens = usage.get("completion_tokens")
     if prompt_tokens is None or completion_tokens is None:
         prompt_tokens, completion_tokens = estimate_text_tokens(payload.prompt, result.text or "")
+    generation = Generation(
+        user_id=user.id,
+        modality="text",
+        provider=result.provider,
+        model=result.model,
+        prompt=payload.prompt,
+        output_url=None,
+        status=result.status,
+    )
+    db.add(generation)
     record_usage(db, user, api_key, "text", result.provider, result.model, prompt_tokens, completion_tokens, 1)
     return TextGenerationResponse(provider=result.provider, model=result.model, text=result.text or "", usage=usage)
 
@@ -98,4 +108,3 @@ def history(user: User = Depends(get_current_user), db: Session = Depends(get_db
 def _ensure_credits(user: User, credits: int) -> None:
     if user.credits_remaining < credits:
         raise HTTPException(status_code=402, detail="Insufficient credits")
-

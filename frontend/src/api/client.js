@@ -1,5 +1,28 @@
-export const API_URL = (import.meta.env.VITE_API_URL || 'https://ai-api-platform-pnut.onrender.com').replace(/\/$/, '')
+const configuredApiUrl = (import.meta.env.VITE_API_URL || 'https://ai-api-platform-pnut.onrender.com').replace(/\/$/, '')
+export const API_URL = resolveApiUrl(configuredApiUrl)
 export const MOCK_PROVIDERS_ENABLED = import.meta.env.VITE_ALLOW_MOCK_PROVIDERS === 'true'
+
+function resolveApiUrl(configuredUrl) {
+  if (typeof window === 'undefined') return configuredUrl
+
+  try {
+    const apiUrl = new URL(configuredUrl)
+    const pageHost = window.location.hostname
+    const apiIsLocalhost = ['localhost', '127.0.0.1', '::1'].includes(apiUrl.hostname)
+    const pageIsLocalhost = ['localhost', '127.0.0.1', '::1'].includes(pageHost)
+
+    if (apiIsLocalhost && !pageIsLocalhost) {
+      apiUrl.hostname = pageHost
+      apiUrl.port = apiUrl.port || '8002'
+      apiUrl.protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
+      return apiUrl.toString().replace(/\/$/, '')
+    }
+  } catch {
+    return configuredUrl
+  }
+
+  return configuredUrl
+}
 
 export function getToken() {
   return localStorage.getItem('token')

@@ -7,7 +7,7 @@ const ENDPOINTS = {
   text: {
     label: 'Text generation',
     path: '/api/generate/text',
-    providers: ['openai', 'deepseek', 'qwen'],
+    providers: ['openai', 'deepseek', 'claude', 'qwen'],
     credits: 1,
     defaults: { prompt: 'Write a concise launch note for a premium AI API platform.', max_tokens: 512 }
   },

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { api } from '../api/client'
+import { api, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
 import EmptyState from '../components/EmptyState'
-import { GlassButton, GlassCard } from '../components/ui'
-import { CalendarClock, Check, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, Sparkles, Video } from 'lucide-react'
+import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
+import { CalendarClock, Check, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, Play, Sparkles, TerminalSquare, Video, Wand2 } from 'lucide-react'
 
 const DASHBOARD_EXAMPLES = [
   'Generate a glassmorphic AI product image',
@@ -11,10 +11,41 @@ const DASHBOARD_EXAMPLES = [
   'Review usage and tune provider routing'
 ]
 
+const GENERATOR_CONFIG = {
+  text: {
+    label: 'Text',
+    path: '/api/generate/text',
+    credits: 1,
+    providers: ['openai', 'deepseek', 'claude'],
+    models: {
+      openai: ['gpt-4o-mini', 'gpt-4.1-mini'],
+      deepseek: ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'],
+      claude: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest']
+    },
+    prompt: 'Write a concise launch note for a premium AI API platform.',
+    extra: { max_tokens: 512 }
+  },
+  image: {
+    label: 'Image',
+    path: '/api/generate/image',
+    credits: 10,
+    providers: ['openai'],
+    models: {
+      openai: ['gpt-image-1.5', 'gpt-image-2', 'gpt-image-1']
+    },
+    prompt: 'A cinematic VisionOS glass console for an AI API platform',
+    extra: { size: '1024x1024' }
+  }
+}
+
 export default function Dashboard() {
   const [data, setData] = useState(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false)
+  const [generator, setGenerator] = useState(() => initialGeneratorState())
+  const [generatorHistory, setGeneratorHistory] = useState([])
+  const [generatorError, setGeneratorError] = useState('')
+  const [generatorLoading, setGeneratorLoading] = useState(false)
 
   useEffect(() => {
     api('/api/dashboard').then(setData)
@@ -35,8 +66,79 @@ export default function Dashboard() {
     return () => window.clearTimeout(timer)
   }, [searchParams, setSearchParams])
 
+  function updateGenerator(patch) {
+    setGenerator((current) => {
+      const next = { ...current, ...patch }
+      if (patch.endpoint && patch.endpoint !== current.endpoint) {
+        const config = GENERATOR_CONFIG[patch.endpoint]
+        const provider = config.providers[0]
+        return {
+          endpoint: patch.endpoint,
+          provider,
+          model: config.models[provider][0],
+          prompt: config.prompt
+        }
+      }
+      if (patch.provider && patch.provider !== current.provider) {
+        const config = GENERATOR_CONFIG[next.endpoint]
+        return { ...next, model: config.models[patch.provider][0] }
+      }
+      return next
+    })
+  }
+
+  async function runGeneration(event) {
+    event.preventDefault()
+    const config = GENERATOR_CONFIG[generator.endpoint]
+    const payload = {
+      provider: generator.provider,
+      model: generator.model,
+      prompt: generator.prompt.trim(),
+      ...config.extra
+    }
+
+    if (!payload.prompt) {
+      setGeneratorError('Prompt is required.')
+      return
+    }
+
+    setGeneratorError('')
+    setGeneratorLoading(true)
+    window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'generating' } }))
+
+    try {
+      const started = performance.now()
+      const result = await sendDashboardGeneration(config.path, payload)
+      const elapsed = Math.round(performance.now() - started)
+      const record = {
+        id: result.id || Date.now(),
+        endpoint: generator.endpoint,
+        provider: result.provider,
+        model: result.model,
+        prompt: payload.prompt,
+        text: result.text,
+        output_url: result.output_url,
+        status: result.status || 'completed',
+        credits: config.credits,
+        elapsed
+      }
+      setGeneratorHistory((current) => [record, ...current].slice(0, 6))
+      const refreshed = await api('/api/dashboard')
+      setData(refreshed)
+    } catch (err) {
+      setGeneratorError(err.message)
+    } finally {
+      setGeneratorLoading(false)
+      window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'idle' } }))
+    }
+  }
+
   if (!data) return <p className="muted animate-pulse text-sm">Loading dashboard...</p>
   const usage = data.usage
+  const generatedText = data.generated_text || []
+  const generatedImages = data.generated_images || []
+  const generatedVideos = data.generated_videos || []
+  const hasGenerations = generatedText.length + generatedImages.length + generatedVideos.length > 0
   return (
     <div className="space-y-6">
       {showCheckoutSuccess && (
@@ -50,13 +152,21 @@ export default function Dashboard() {
         <h1 className="title-gradient text-3xl font-bold sm:text-4xl">Dashboard</h1>
         <p className="muted mt-2 text-sm">Credits, usage, and recent media generations.</p>
       </div>
+      <DashboardGenerator
+        generator={generator}
+        history={generatorHistory}
+        error={generatorError}
+        loading={generatorLoading}
+        onChange={updateGenerator}
+        onSubmit={runGeneration}
+      />
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metric label="Remaining credits" value={usage.credits_remaining} />
+        <Metric label="Text credits used" value={usage.by_modality.text || 0} />
         <Metric label="Image credits used" value={usage.by_modality.image || 0} />
-        <Metric label="Video credits used" value={usage.by_modality.video || 0} />
       </div>
       {data.billing && <BillingStatus billing={data.billing} />}
-      {data.generated_images.length === 0 && data.generated_videos.length === 0 && (
+      {!hasGenerations && generatorHistory.length === 0 && (
         <EmptyState
           title="Your AI workspace is ready"
           description="Start a generation or jump into a recent workflow to populate the command center."
@@ -65,9 +175,108 @@ export default function Dashboard() {
           actionHref="/images"
         />
       )}
-      <Gallery title="Generated images" items={data.generated_images} type="image" />
-      <Gallery title="Generated videos" items={data.generated_videos} type="video" />
+      <TextHistory title="Text generations" items={[...generatorHistory.filter((item) => item.endpoint === 'text'), ...generatedText]} />
+      <Gallery title="Generated images" items={generatedImages} type="image" />
+      <Gallery title="Generated videos" items={generatedVideos} type="video" />
     </div>
+  )
+}
+
+function initialGeneratorState() {
+  const config = GENERATOR_CONFIG.text
+  const provider = config.providers[0]
+  return {
+    endpoint: 'text',
+    provider,
+    model: config.models[provider][0],
+    prompt: config.prompt
+  }
+}
+
+async function sendDashboardGeneration(path, payload) {
+  let key = await getOrCreateDevelopmentApiKey()
+  try {
+    return await apiKeyRequest(path, key, payload)
+  } catch (err) {
+    if (!/api key|unauthorized|forbidden/i.test(err.message)) throw err
+    localStorage.removeItem('development_api_key')
+    key = await getOrCreateDevelopmentApiKey()
+    return apiKeyRequest(path, key, payload)
+  }
+}
+
+function DashboardGenerator({ generator, history, error, loading, onChange, onSubmit }) {
+  const config = GENERATOR_CONFIG[generator.endpoint]
+  const modelOptions = config.models[generator.provider] || []
+
+  return (
+    <GlassCard as="form" className="dashboard-generator p-5" onSubmit={onSubmit}>
+      <div className="dashboard-generator-header">
+        <div className="flex items-center gap-3">
+          <span className="dashboard-generator-icon"><TerminalSquare className="h-5 w-5" /></span>
+          <div>
+            <p className="eyebrow mb-1">Live Generation</p>
+            <h2 className="text-xl font-bold text-white">Provider console</h2>
+          </div>
+        </div>
+        <span className={`dashboard-generator-status ${loading ? 'is-loading' : ''}`}>
+          <Sparkles className="h-3.5 w-3.5" />
+          {loading ? 'Generating' : `${config.credits} credits`}
+        </span>
+      </div>
+
+      <div className="dashboard-generator-grid">
+        <GlassSelect
+          value={generator.endpoint}
+          options={Object.entries(GENERATOR_CONFIG).map(([value, item]) => ({ value, label: item.label }))}
+          onChange={(event) => onChange({ endpoint: event.target.value })}
+        />
+        <GlassSelect
+          value={generator.provider}
+          options={config.providers}
+          onChange={(event) => onChange({ provider: event.target.value })}
+        />
+        <GlassSelect
+          value={generator.model}
+          options={modelOptions}
+          onChange={(event) => onChange({ model: event.target.value })}
+        />
+      </div>
+
+      <div className="dashboard-generator-body">
+        <GlassTextarea
+          className="dashboard-generator-prompt"
+          value={generator.prompt}
+          onChange={(event) => onChange({ prompt: event.target.value })}
+          placeholder="Prompt the selected provider..."
+        />
+        <div className="dashboard-generator-side">
+          <div className="dashboard-generator-preview">
+            <Wand2 className="h-5 w-5 text-[#00E5FF]" />
+            <p className="text-sm font-semibold text-white">Ready route</p>
+            <p className="muted text-xs">{generator.provider} / {generator.model}</p>
+          </div>
+          <GlassButton type="submit" disabled={loading}>
+            <Play className="h-4 w-4" />
+            {loading ? 'Generating' : 'Generate'}
+          </GlassButton>
+        </div>
+      </div>
+
+      {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
+
+      {history.length > 0 && (
+        <div className="dashboard-generator-history">
+          {history.slice(0, 3).map((item) => (
+            <div key={`${item.endpoint}-${item.id}`} className="dashboard-generator-history-item">
+              <span>{item.endpoint}</span>
+              <p>{item.text || item.prompt}</p>
+              <small>{item.provider} / {item.elapsed} ms / {item.credits} credits</small>
+            </div>
+          ))}
+        </div>
+      )}
+    </GlassCard>
   )
 }
 
@@ -177,6 +386,31 @@ function Metric({ label, value }) {
       <div className="mini-chart" aria-hidden="true">
         {bars.map((height, index) => <span key={index} style={{ '--bar-height': `${height}%`, '--i': index }} />)}
       </div>
+    </GlassCard>
+  )
+}
+
+function TextHistory({ title, items }) {
+  const visibleItems = items.slice(0, 8)
+
+  return (
+    <GlassCard as="section" className="p-5">
+      <h2 className="mb-4 text-lg font-semibold text-white">{title}</h2>
+      {visibleItems.length === 0 ? (
+        <p className="muted text-sm">No text generations yet.</p>
+      ) : (
+        <div className="dashboard-text-history">
+          {visibleItems.map((item) => (
+            <article key={`text-${item.id}-${item.elapsed || 0}`} className="dashboard-text-item">
+              <div>
+                <p className="line-clamp-2 text-sm font-semibold text-white">{item.text || item.prompt}</p>
+                <p className="mt-1 text-xs text-[#A1A1AA]">{item.provider} / {item.model}</p>
+              </div>
+              <span>{item.status || 'completed'}</span>
+            </article>
+          ))}
+        </div>
+      )}
     </GlassCard>
   )
 }

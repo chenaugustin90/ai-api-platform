@@ -12,7 +12,7 @@ from app.providers.base import ProviderResult
 settings = get_settings()
 
 IMAGE_DEFAULT_MODELS = {
-    "openai": "gpt-image-1",
+    "openai": settings.openai_image_model,
     "flux": "flux-2-pro-preview",
 }
 

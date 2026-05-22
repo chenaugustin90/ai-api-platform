@@ -29,7 +29,7 @@ const endpointDocs = [
     title: 'Text generation',
     method: 'POST',
     path: '/api/generate/text',
-    description: 'Route a prompt to OpenAI, DeepSeek, or Qwen and receive metered text output.',
+    description: 'Route a prompt to OpenAI, DeepSeek, Claude, or Qwen and receive metered text output.',
     auth: 'X-API-Key',
     request: { provider: 'openai', model: null, prompt: 'Write a concise launch note for our API.', max_tokens: 512 },
     response: {
@@ -46,8 +46,8 @@ const endpointDocs = [
     path: '/api/generate/image',
     description: 'Generate an image with OpenAI or FLUX. Image requests currently debit 10 credits.',
     auth: 'X-API-Key',
-    request: { provider: 'openai', model: null, prompt: 'A VisionOS glass console for an AI API platform', size: '1024x1024' },
-    response: { id: 42, provider: 'openai', model: 'gpt-image-1', status: 'completed', output_url: 'https://cdn.example.com/image.png' }
+    request: { provider: 'openai', model: 'gpt-image-1.5', prompt: 'A VisionOS glass console for an AI API platform', size: '1024x1024' },
+    response: { id: 42, provider: 'openai', model: 'gpt-image-1.5', status: 'completed', output_url: 'https://cdn.example.com/image.png' }
   },
   {
     id: 'video',

@@ -2125,6 +2125,149 @@ select.field option {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
+.dashboard-generator {
+  display: grid;
+  gap: 1rem;
+  border-color: rgba(0, 229, 255, 0.18);
+  background:
+    radial-gradient(20rem 14rem at 8% 0%, rgba(0, 229, 255, 0.13), transparent 70%),
+    radial-gradient(22rem 15rem at 100% 10%, rgba(139, 92, 246, 0.12), transparent 70%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
+    rgba(8, 13, 27, 0.56);
+}
+
+.dashboard-generator-header,
+.dashboard-generator-body,
+.dashboard-generator-grid,
+.dashboard-generator-history {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-generator-header {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.dashboard-generator-icon {
+  display: grid;
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid rgba(0, 229, 255, 0.22);
+  border-radius: 999px;
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.085);
+  box-shadow: 0 0 28px rgba(0, 229, 255, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.dashboard-generator-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.52rem 0.72rem;
+  color: #dffbff;
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: rgba(0, 229, 255, 0.075);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
+
+.dashboard-generator-status.is-loading svg {
+  animation: ai-generating 0.9s linear infinite;
+}
+
+.dashboard-generator-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-generator-body {
+  grid-template-columns: minmax(0, 1fr) minmax(13rem, 0.28fr);
+}
+
+.dashboard-generator-prompt {
+  min-height: 12rem;
+  resize: vertical;
+}
+
+.dashboard-generator-side {
+  display: grid;
+  align-content: stretch;
+  gap: 1rem;
+}
+
+.dashboard-generator-preview {
+  display: grid;
+  min-height: 8rem;
+  align-content: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(190, 250, 255, 0.12);
+  border-radius: 24px;
+  padding: 1rem;
+  background: rgba(3, 7, 18, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+.dashboard-generator-history {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dashboard-generator-history-item,
+.dashboard-text-item {
+  border: 1px solid rgba(190, 250, 255, 0.12);
+  border-radius: 20px;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.dashboard-generator-history-item span,
+.dashboard-text-item span {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid rgba(0, 229, 255, 0.16);
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+  color: #dffbff;
+  font-size: 0.68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  background: rgba(0, 229, 255, 0.07);
+}
+
+.dashboard-generator-history-item p {
+  display: -webkit-box;
+  margin-top: 0.55rem;
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 0.86rem;
+  font-weight: 650;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.dashboard-generator-history-item small {
+  display: block;
+  margin-top: 0.45rem;
+  color: #a1a1aa;
+  font-size: 0.72rem;
+}
+
+.dashboard-text-history {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.dashboard-text-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
 .checkout-success {
   position: fixed;
   right: 1.25rem;
@@ -3676,6 +3819,26 @@ select.field option {
   .dashboard-metric-number {
     margin-top: 2rem;
     font-size: clamp(2.6rem, 18vw, 4rem);
+  }
+
+  .dashboard-generator-header,
+  .dashboard-generator-body,
+  .dashboard-generator-grid,
+  .dashboard-generator-history {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-generator-status {
+    width: fit-content;
+  }
+
+  .dashboard-generator-prompt {
+    min-height: 170px;
+  }
+
+  .dashboard-text-item {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .docs-hero {

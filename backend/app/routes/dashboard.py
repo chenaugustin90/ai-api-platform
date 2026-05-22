@@ -29,6 +29,13 @@ def dashboard(user: User = Depends(get_current_user), db: Session = Depends(get_
         .limit(12)
         .all()
     )
+    text_generations = (
+        db.query(Generation)
+        .filter(Generation.user_id == user.id, Generation.modality == "text")
+        .order_by(Generation.created_at.desc())
+        .limit(12)
+        .all()
+    )
     billing = {
         "subscription_tier": user.subscription_tier or "free",
         "subscription_status": user.subscription_status or "free",
@@ -38,4 +45,10 @@ def dashboard(user: User = Depends(get_current_user), db: Session = Depends(get_
         "subscription_current_period_end": user.subscription_current_period_end,
         "customer_portal_available": bool(settings.stripe_secret_key and user.stripe_customer_id),
     }
-    return {"usage": usage_summary(db, user), "billing": billing, "generated_images": images, "generated_videos": videos}
+    return {
+        "usage": usage_summary(db, user),
+        "billing": billing,
+        "generated_text": text_generations,
+        "generated_images": images,
+        "generated_videos": videos,
+    }
