@@ -86,6 +86,7 @@ ALLOW_MOCK_PROVIDERS=false
 
 OPENAI_API_KEY=<secret>
 DEEPSEEK_API_KEY=<secret>
+ANTHROPIC_API_KEY=<secret>
 QWEN_API_KEY=<secret>
 FLUX_API_KEY=<secret>
 KLING_API_KEY=<secret>
@@ -94,8 +95,10 @@ VEO_API_KEY=<secret>
 
 OPENAI_BASE_URL=https://api.openai.com/v1
 DEEPSEEK_BASE_URL=https://api.deepseek.com
+ANTHROPIC_BASE_URL=https://api.anthropic.com/v1
 QWEN_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 FLUX_BASE_URL=https://api.bfl.ai/v1
+OPENAI_IMAGE_MODEL=gpt-image-1.5
 
 STRIPE_SECRET_KEY=<secret>
 STRIPE_WEBHOOK_SECRET=<secret>
@@ -129,7 +132,7 @@ Then copy the Stripe webhook signing secret into `STRIPE_WEBHOOK_SECRET` on Rend
 - Set Render `FRONTEND_URL` to the Vercel frontend URL.
 - Set Render `CORS_ORIGINS` to every allowed frontend origin.
 - Set Render `SECRET_KEY` to a long random secret.
-- Set provider API keys and Stripe variables in Render.
+- Set provider API keys, including `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, and `ANTHROPIC_API_KEY`, plus Stripe variables in Render.
 - Keep `ALLOW_MOCK_PROVIDERS=false` for production provider calls.
 - Run `npm run build` in `frontend`.
 - Run `python3 -m compileall app` in `backend`.
