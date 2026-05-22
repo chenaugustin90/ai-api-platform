@@ -1,15 +1,17 @@
-import { BarChart3, BookOpen, CreditCard, FileCode2, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, SquareTerminal, Video, X } from 'lucide-react'
+import { BarChart3, BookOpen, CreditCard, FileCode2, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, SquareTerminal, UserCircle, Video, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import AiStatusIndicator from './AiStatusIndicator'
 import CommandPalette from './CommandPalette'
+import ThemeToggle from './ThemeToggle'
 import { GlassButton, GlassCard } from './ui'
 
 const links = [
   ['Dashboard', '/dashboard', LayoutDashboard],
   ['Playground', '/playground', SquareTerminal],
   ['Prompt Library', '/prompt-library', BookOpen],
+  ['Account', '/account', UserCircle],
   ['API Keys', '/api-keys', KeyRound],
   ['Pricing', '/pricing', CreditCard],
   ['API Docs', '/docs', FileCode2],
@@ -48,6 +50,7 @@ export default function Layout() {
           </Link>
           <div className="flex min-w-0 items-center gap-2 text-sm sm:gap-3">
             <AiStatusIndicator />
+            <ThemeToggle className="hidden sm:inline-flex" />
             <span className="hidden max-w-[260px] truncate rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[#A1A1AA] sm:inline">{user?.email}</span>
             <GlassButton
               variant="secondary"
@@ -89,6 +92,7 @@ export default function Layout() {
               <span className="vision-nav-label">{label}</span>
             </NavLink>
           ))}
+          <ThemeToggle className="mt-2 w-full justify-center sm:hidden" />
           <button
             type="button"
             className="vision-nav-item sm:hidden"

@@ -5,8 +5,10 @@ import './styles.css'
 import Layout from './components/Layout'
 import LiquidGlassEffects from './components/LiquidGlassEffects'
 import ProtectedRoute from './components/ProtectedRoute'
+import { getStoredTheme } from './components/ThemeToggle'
 import { ToastProvider } from './components/ToastProvider'
 import { AuthProvider } from './context/AuthContext'
+import Account from './pages/Account'
 import ApiKeys from './pages/ApiKeys'
 import Dashboard from './pages/Dashboard'
 import Docs from './pages/Docs'
@@ -20,6 +22,11 @@ import Pricing from './pages/Pricing'
 import Register from './pages/Register'
 import Usage from './pages/Usage'
 import VideoGeneration from './pages/VideoGeneration'
+
+if (getStoredTheme() === 'light') {
+  document.body.classList.add('theme-light')
+  document.documentElement.style.colorScheme = 'light'
+}
 
 const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
@@ -37,6 +44,7 @@ const router = createBrowserRouter([
       { path: '/pricing', element: <Pricing /> },
       { path: '/playground', element: <Playground /> },
       { path: '/prompt-library', element: <PromptLibrary /> },
+      { path: '/account', element: <Account /> },
       { path: '/docs', element: <Docs /> },
       { path: '/images', element: <ImageGeneration /> },
       { path: '/videos', element: <VideoGeneration /> },
