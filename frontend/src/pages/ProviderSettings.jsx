@@ -7,14 +7,18 @@ export default function ProviderSettings() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
   const [testing, setTesting] = useState('')
+  const [refreshing, setRefreshing] = useState(false)
   const [testResults, setTestResults] = useState({})
 
   async function loadStatus() {
     setError('')
+    setRefreshing(true)
     try {
       setData(await api('/api/providers/status'))
     } catch (err) {
       setError(err.message)
+    } finally {
+      setRefreshing(false)
     }
   }
 
@@ -54,9 +58,9 @@ export default function ProviderSettings() {
           <h1 className="title-gradient text-3xl font-bold sm:text-4xl md:text-5xl">AI Providers</h1>
           <p className="muted mt-3 max-w-2xl text-sm">Configure upstream model providers, verify environment variables, and run live connection checks.</p>
         </div>
-        <GlassButton variant="secondary" onClick={loadStatus}>
-          <RefreshCw className="h-4 w-4" />
-          Refresh
+        <GlassButton variant="secondary" onClick={loadStatus} disabled={refreshing}>
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing' : 'Refresh'}
         </GlassButton>
       </div>
 

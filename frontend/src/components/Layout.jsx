@@ -10,15 +10,15 @@ import { GlassButton, GlassCard } from './ui'
 const links = [
   ['Dashboard', '/dashboard', LayoutDashboard],
   ['Playground', '/playground', SquareTerminal],
+  ['Images', '/images', Image],
+  ['Videos', '/videos', Video],
   ['Prompt Library', '/prompt-library', BookOpen],
-  ['Account', '/account', UserCircle],
   ['API Keys', '/api-keys', KeyRound],
   ['Pricing', '/pricing', CreditCard],
   ['API Docs', '/docs', FileCode2],
-  ['Images', '/images', Image],
-  ['Videos', '/videos', Video],
   ['Usage', '/usage', BarChart3],
-  ['AI Providers', '/settings/providers', Settings]
+  ['AI Providers', '/settings/providers', Settings],
+  ['Account', '/account', UserCircle]
 ]
 
 export default function Layout() {
