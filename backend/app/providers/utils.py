@@ -28,6 +28,8 @@ PROVIDER_LABELS = {
     "flux": "FLUX",
 }
 
+PRODUCTION_PROVIDER_IDS = {"openai", "deepseek", "claude"}
+
 
 def provider_key_status() -> dict[str, bool]:
     return {
@@ -37,6 +39,24 @@ def provider_key_status() -> dict[str, bool]:
         "qwen": bool(settings.qwen_api_key),
         "flux": bool(settings.flux_api_key),
     }
+
+
+def has_configured_production_provider() -> bool:
+    key_status = provider_key_status()
+    return any(key_status[provider] for provider in PRODUCTION_PROVIDER_IDS)
+
+
+def effective_allow_mock_providers() -> bool:
+    return bool(settings.allow_mock_providers and not has_configured_production_provider())
+
+
+def provider_execution_mode(provider: str) -> str:
+    key_status = provider_key_status()
+    if key_status.get(provider, False):
+        return "real"
+    if effective_allow_mock_providers():
+        return "mock"
+    return "unavailable"
 
 
 def provider_diagnostics() -> list[dict]:
@@ -49,6 +69,9 @@ def provider_diagnostics() -> list[dict]:
             "status": "connected" if key_status["openai"] else "disconnected",
             "env_var": "OPENAI_API_KEY",
             "capabilities": ["text", "image"],
+            "execution_mode": provider_execution_mode("openai"),
+            "will_use_real_provider": provider_execution_mode("openai") == "real",
+            "will_use_mock": provider_execution_mode("openai") == "mock",
             "message": _provider_message("openai", key_status["openai"]),
         },
         {
@@ -58,6 +81,9 @@ def provider_diagnostics() -> list[dict]:
             "status": "connected" if key_status["deepseek"] else "disconnected",
             "env_var": "DEEPSEEK_API_KEY",
             "capabilities": ["text"],
+            "execution_mode": provider_execution_mode("deepseek"),
+            "will_use_real_provider": provider_execution_mode("deepseek") == "real",
+            "will_use_mock": provider_execution_mode("deepseek") == "mock",
             "message": _provider_message("deepseek", key_status["deepseek"]),
         },
         {
@@ -67,12 +93,17 @@ def provider_diagnostics() -> list[dict]:
             "status": "connected" if key_status["claude"] else "disconnected",
             "env_var": "ANTHROPIC_API_KEY",
             "capabilities": ["text"],
+            "execution_mode": provider_execution_mode("claude"),
+            "will_use_real_provider": provider_execution_mode("claude") == "real",
+            "will_use_mock": provider_execution_mode("claude") == "mock",
             "message": _provider_message("claude", key_status["claude"]),
         },
     ]
 
 
 def log_provider_configuration() -> None:
+    if has_configured_production_provider() and settings.allow_mock_providers:
+        logger.warning("Provider keys are configured; mock fallback is disabled for production providers.")
     for provider, configured in provider_key_status().items():
         if configured:
             continue
@@ -83,7 +114,7 @@ def log_provider_configuration() -> None:
 def provider_not_configured(provider: str, model: str, prompt: str, mock_factory) -> ProviderResult:
     env_var = PROVIDER_ENV_VARS.get(provider, f"{provider.upper()}_API_KEY")
     logger.warning("%s is missing; %s provider request cannot use the real upstream API.", env_var, provider)
-    if settings.allow_mock_providers:
+    if effective_allow_mock_providers():
         return mock_factory(provider, model, prompt)
     label = PROVIDER_LABELS.get(provider, provider.title())
     raise HTTPException(
@@ -139,7 +170,9 @@ def _provider_message(provider: str, configured: bool) -> str:
     env_var = PROVIDER_ENV_VARS.get(provider, f"{provider.upper()}_API_KEY")
     label = PROVIDER_LABELS.get(provider, provider.title())
     if configured:
-        return f"{label} key is present. Run a connection test to verify model access and quota."
+        return f"{label} key is present. Requests will use the real provider."
+    if effective_allow_mock_providers():
+        return f"{label} is disconnected. Mock fallback is active because no production provider keys are configured."
     return f"{label} is disconnected. Add {env_var} in Render environment variables, then redeploy."
 
 

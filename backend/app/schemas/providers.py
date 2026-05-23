@@ -14,6 +14,9 @@ class ProviderStatus(BaseModel):
     status: str
     env_var: str
     capabilities: list[str]
+    execution_mode: str
+    will_use_real_provider: bool
+    will_use_mock: bool
     message: str
     models: list[str]
     docs_url: str

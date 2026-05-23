@@ -80,6 +80,7 @@ export default function ProviderSettings() {
           </div>
           <div className="provider-overview-grid">
             <ProviderRuntimeMetric label="Fallback mode" value={data.allow_mock_providers ? 'Enabled' : 'Disabled'} />
+            {health && <ProviderRuntimeMetric label="Effective mode" value={health.fallback_mode ? 'Mock fallback' : 'Real providers'} />}
             <ProviderRuntimeMetric label="Image model" value={data.openai_image_model} />
             <ProviderRuntimeMetric label="Connected" value={health?.summary ? `${health.summary.connected}/${health.summary.total}` : `${data.providers.filter((provider) => provider.configured).length}/${data.providers.length}`} />
           </div>
@@ -130,6 +131,13 @@ function ProviderCard({ provider, testing, result, onTest }) {
           <StatusIcon className="h-3.5 w-3.5" />
           {statusLabel}
         </span>
+      </div>
+      <div className="provider-mode-row">
+        <span className={`provider-mode-pill is-${provider.execution_mode || 'unknown'}`}>
+          {(provider.execution_mode || 'unknown').replace('-', ' ')} mode
+        </span>
+        {provider.will_use_real_provider && <span className="provider-mode-pill is-real">Real upstream</span>}
+        {provider.will_use_mock && <span className="provider-mode-pill is-mock">Mock fallback</span>}
       </div>
       {provider.message && <p className="provider-diagnostic-message">{provider.message}</p>}
 

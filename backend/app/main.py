@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.db.init_db import init_db
-from app.providers.utils import log_provider_configuration, provider_diagnostics, provider_key_status
+from app.providers.utils import effective_allow_mock_providers, log_provider_configuration, provider_diagnostics, provider_key_status
 from app.routes import api_keys, auth, billing, dashboard, generate, providers, usage
 
 settings = get_settings()
@@ -47,11 +47,12 @@ def provider_health():
     return {
         "ok": True,
         "allow_mock_providers": settings.allow_mock_providers,
+        "fallback_mode": effective_allow_mock_providers(),
         "openai_image_model": settings.openai_image_model,
         "summary": {
             "connected": connected,
             "total": len(providers),
-            "fallback_mode": settings.allow_mock_providers,
+            "fallback_mode": effective_allow_mock_providers(),
         },
         "providers": providers,
         "legacy_status": provider_key_status(),
