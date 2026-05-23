@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { api, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
+import { api } from '../api/client'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
@@ -23,7 +23,7 @@ const GENERATOR_CONFIG = {
     models: {
       openai: ['gpt-4o-mini', 'gpt-4.1-mini'],
       deepseek: ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'],
-      claude: ['claude-sonnet-4-20250514', 'claude-3-7-sonnet-latest', 'claude-3-5-haiku-latest']
+      claude: ['claude-3-5-haiku-20241022', 'claude-sonnet-4-20250514', 'claude-3-7-sonnet-20250219']
     },
     prompt: 'Write a concise launch note for a premium AI API platform.',
     extra: { max_tokens: 512 }
@@ -533,15 +533,11 @@ function initialGeneratorState() {
 }
 
 async function sendDashboardGeneration(path, payload, signal) {
-  let key = await getOrCreateDevelopmentApiKey()
-  try {
-    return await apiKeyRequest(path, key, payload, { signal })
-  } catch (err) {
-    if (!/api key|unauthorized|forbidden/i.test(err.message)) throw err
-    localStorage.removeItem('development_api_key')
-    key = await getOrCreateDevelopmentApiKey()
-    return apiKeyRequest(path, key, payload, { signal })
-  }
+  return api(path, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    signal
+  })
 }
 
 function DashboardGenerator({ generator, history, error, loading, progress, result, streamedText, onChange, onSubmit, onCancel, onRetry, onCopy, onFavoritePrompt }) {

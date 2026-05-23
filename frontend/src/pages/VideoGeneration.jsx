@@ -1,6 +1,6 @@
 import { Clapperboard, Copy, Expand, Heart, Video } from 'lucide-react'
 import { useState } from 'react'
-import { apiKeyRequest } from '../api/client'
+import { api } from '../api/client'
 import AiLoading from '../components/AiLoading'
 import EmptyState from '../components/EmptyState'
 import PromptHistory, { saveRecentPrompt } from '../components/PromptHistory'
@@ -14,7 +14,7 @@ const VIDEO_EXAMPLES = [
 ]
 
 export default function VideoGeneration() {
-  const [form, setForm] = useState({ apiKey: '', provider: 'runway', model: '', prompt: '', duration_seconds: 5 })
+  const [form, setForm] = useState({ provider: 'runway', model: '', prompt: '', duration_seconds: 5 })
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,11 +26,14 @@ export default function VideoGeneration() {
     setLoading(true)
     window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'generating' } }))
     try {
-      setResult(await apiKeyRequest('/api/generate/video', form.apiKey, {
-        provider: form.provider,
-        model: form.model || null,
-        prompt: form.prompt,
-        duration_seconds: Number(form.duration_seconds) || 5
+      setResult(await api('/api/generate/video', {
+        method: 'POST',
+        body: JSON.stringify({
+          provider: form.provider,
+          model: form.model || null,
+          prompt: form.prompt,
+          duration_seconds: Number(form.duration_seconds) || 5
+        })
       }))
       saveRecentPrompt(VIDEO_PROMPT_HISTORY_KEY, form.prompt)
     } catch (err) {
@@ -52,7 +55,6 @@ export default function VideoGeneration() {
         <h1 className="title-gradient text-3xl font-bold sm:text-4xl">Video generation</h1>
       </div>
       <GlassCard as="form" className="space-y-4 p-5" onSubmit={submit}>
-        <GlassInput placeholder="API key" value={form.apiKey} onChange={(e) => setForm({ ...form, apiKey: e.target.value })} />
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           <GlassSelect value={form.provider} options={['runway', 'kling', 'veo']} onChange={(e) => setForm({ ...form, provider: e.target.value })} />
           <GlassInput placeholder="Model override" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />

@@ -1,6 +1,6 @@
 import { Copy, Download, Expand, Heart, RefreshCw, Sparkles, Wand2 } from 'lucide-react'
 import { useState } from 'react'
-import { MOCK_PROVIDERS_ENABLED, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
+import { api } from '../api/client'
 import AiLoading from '../components/AiLoading'
 import EmptyState from '../components/EmptyState'
 import PromptHistory, { saveRecentPrompt } from '../components/PromptHistory'
@@ -14,7 +14,7 @@ const IMAGE_EXAMPLES = [
 ]
 
 export default function ImageGeneration() {
-  const [form, setForm] = useState({ apiKey: '', provider: 'openai', model: '', prompt: '', size: '1024x1024' })
+  const [form, setForm] = useState({ provider: 'openai', model: '', prompt: '', size: '1024x1024' })
   const [images, setImages] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -29,13 +29,14 @@ export default function ImageGeneration() {
     setLoading(true)
     window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'generating' } }))
     try {
-      const apiKey = form.apiKey.trim() || (MOCK_PROVIDERS_ENABLED ? await getOrCreateDevelopmentApiKey() : '')
-      if (!apiKey) throw new Error('API key is required when mock provider mode is disabled.')
-      const result = await apiKeyRequest('/api/generate/image', apiKey, {
-        provider: form.provider,
-        model: form.model || null,
-        prompt,
-        size: form.size
+      const result = await api('/api/generate/image', {
+        method: 'POST',
+        body: JSON.stringify({
+          provider: form.provider,
+          model: form.model || null,
+          prompt,
+          size: form.size
+        })
       })
       const image = {
         id: result.id || crypto.randomUUID(),
@@ -84,17 +85,13 @@ export default function ImageGeneration() {
         />
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)]">
-          <GlassInput
-            placeholder={MOCK_PROVIDERS_ENABLED ? 'API key optional in mock mode' : 'API key'}
-            value={form.apiKey}
-            onChange={(e) => setForm({ ...form, apiKey: e.target.value })}
-          />
           <GlassSelect value={form.provider} options={['openai', 'flux']} onChange={(e) => setForm({ ...form, provider: e.target.value })} />
           <GlassInput placeholder="Size" value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} />
+          <GlassInput placeholder="Model override" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
         </div>
 
         <div className="sticky-action-row grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
-          <GlassInput placeholder="Model override" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+          <p className="muted flex items-center text-xs">Uses your logged-in session automatically. API keys are managed separately for external apps.</p>
           <GlassButton type="submit" className="studio-generate" disabled={loading || !form.prompt.trim()}>
             {loading ? <RefreshCw className="h-5 w-5 animate-spin" /> : <Wand2 className="h-5 w-5" />}
             {loading ? 'Generating' : 'Generate'}

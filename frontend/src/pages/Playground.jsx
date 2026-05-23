@@ -1,6 +1,6 @@
 import { Check, Clock3, Code2, Copy, Play, Sparkles, TerminalSquare, Zap } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { API_URL, api, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
+import { API_URL, api, apiKeyRequest, getToken } from '../api/client'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
 
 const ENDPOINTS = {
@@ -239,31 +239,13 @@ export default function Playground() {
 }
 
 async function sendChatModeRequest(path, payload) {
-  try {
-    return await api(path, {
-      method: 'POST',
-      body: JSON.stringify(payload)
-    })
-  } catch (err) {
-    if (!isApiKeyAuthError(err)) throw err
-    return sendWithSessionApiKey(path, payload)
+  if (!getToken()) {
+    throw new Error('Please log in again to use Chat Mode. Developer API Mode is only for manual X-API-Key testing.')
   }
-}
-
-async function sendWithSessionApiKey(path, payload) {
-  let key = await getOrCreateDevelopmentApiKey()
-  try {
-    return await apiKeyRequest(path, key, payload)
-  } catch (err) {
-    if (!isApiKeyAuthError(err)) throw err
-    localStorage.removeItem('development_api_key')
-    key = await getOrCreateDevelopmentApiKey()
-    return apiKeyRequest(path, key, payload)
-  }
-}
-
-function isApiKeyAuthError(err) {
-  return /api key required|invalid api key/i.test(err?.message || '')
+  return api(path, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
 }
 
 function buildPayload(endpoint, provider, model, defaults) {

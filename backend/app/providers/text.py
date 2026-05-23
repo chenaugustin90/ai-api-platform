@@ -15,9 +15,16 @@ logger = logging.getLogger("app.providers")
 TEXT_DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "deepseek": "deepseek-v4-pro",
-    "claude": "claude-sonnet-4-20250514",
+    "claude": "claude-3-5-haiku-20241022",
     "qwen": "qwen-plus",
 }
+
+ANTHROPIC_MODEL_FALLBACK_ORDER = [
+    "claude-3-5-haiku-20241022",
+    "claude-sonnet-4-20250514",
+    "claude-3-7-sonnet-20250219",
+    "claude-3-haiku-20240307",
+]
 
 
 async def generate_text(provider: str, prompt: str, model: str | None, max_tokens: int) -> ProviderResult:
@@ -106,15 +113,18 @@ async def _claude(prompt: str, model: str, max_tokens: int) -> ProviderResult:
     }
     try:
         async with httpx.AsyncClient(timeout=60) as client:
-            response = await client.post(
-                f"{settings.anthropic_base_url.rstrip('/')}/messages",
-                headers={
-                    "x-api-key": settings.anthropic_api_key,
-                    "anthropic-version": "2023-06-01",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-            )
+            response = await _post_anthropic_message(client, payload)
+            if _should_retry_anthropic_model(response):
+                fallback_model = await _resolve_anthropic_model(client, model)
+                if fallback_model and fallback_model != model:
+                    logger.warning(
+                        "Claude model %s was rejected; retrying with available model %s.",
+                        model,
+                        fallback_model,
+                    )
+                    model = fallback_model
+                    payload["model"] = fallback_model
+                    response = await _post_anthropic_message(client, payload)
     except httpx.TimeoutException:
         raise provider_timeout("claude")
     except httpx.RequestError as exc:
@@ -132,6 +142,49 @@ async def _claude(prompt: str, model: str, max_tokens: int) -> ProviderResult:
         "total_tokens": anthropic_usage.get("input_tokens", 0) + anthropic_usage.get("output_tokens", 0),
     }
     return ProviderResult(provider="claude", model=model, text=text, usage=usage)
+
+
+async def _post_anthropic_message(client: httpx.AsyncClient, payload: dict) -> httpx.Response:
+    return await client.post(
+        f"{settings.anthropic_base_url.rstrip('/')}/messages",
+        headers=_anthropic_headers(),
+        json=payload,
+    )
+
+
+async def _resolve_anthropic_model(client: httpx.AsyncClient, rejected_model: str) -> str | None:
+    response = await client.get(
+        f"{settings.anthropic_base_url.rstrip('/')}/models",
+        headers=_anthropic_headers(),
+    )
+    if response.status_code >= 400:
+        logger.warning("Unable to list Claude models after model rejection: %s", response.text[:800])
+        return None
+
+    data = response.json()
+    available = [item.get("id") for item in data.get("data", []) if item.get("id")]
+    if not available:
+        logger.warning("Anthropic models list was empty after model rejection.")
+        return None
+    for candidate in ANTHROPIC_MODEL_FALLBACK_ORDER:
+        if candidate in available and candidate != rejected_model:
+            return candidate
+    return next((model for model in available if model != rejected_model), None)
+
+
+def _anthropic_headers() -> dict[str, str]:
+    return {
+        "x-api-key": settings.anthropic_api_key or "",
+        "anthropic-version": "2023-06-01",
+        "Content-Type": "application/json",
+    }
+
+
+def _should_retry_anthropic_model(response: httpx.Response) -> bool:
+    if response.status_code not in {400, 404}:
+        return False
+    error_text = response.text.lower()
+    return "model" in error_text or "not_found_error" in error_text
 
 
 async def _openai_compatible(
