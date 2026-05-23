@@ -14,7 +14,7 @@ const IMAGE_EXAMPLES = [
 ]
 
 export default function ImageGeneration() {
-  const [form, setForm] = useState({ provider: 'openai', model: '', prompt: '', size: '1024x1024' })
+  const [form, setForm] = useState({ provider: 'openai', model: 'gpt-image-2', prompt: '', size: '1024x1024' })
   const [images, setImages] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -42,9 +42,9 @@ export default function ImageGeneration() {
         id: result.id || crypto.randomUUID(),
         prompt,
         provider: result.provider,
-        model: result.model,
+        model: result.model || form.model,
         status: result.status,
-        output_url: result.output_url
+        output_url: result.output_url || result.image_url || result.url || result.image_urls?.[0] || null
       }
       setImages((current) => [image, ...current])
       saveRecentPrompt(IMAGE_PROMPT_HISTORY_KEY, prompt)
@@ -85,7 +85,7 @@ export default function ImageGeneration() {
         />
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)]">
-          <GlassSelect value={form.provider} options={['openai', 'flux']} onChange={(e) => setForm({ ...form, provider: e.target.value })} />
+          <GlassSelect value={form.provider} options={['openai', 'flux']} onChange={(e) => setForm({ ...form, provider: e.target.value, model: e.target.value === 'openai' ? 'gpt-image-2' : 'flux-2-pro-preview' })} />
           <GlassInput placeholder="Size" value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} />
           <GlassInput placeholder="Model override" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
         </div>
@@ -135,9 +135,13 @@ export default function ImageGeneration() {
 
 function ImageCard({ image, onRegenerate }) {
   const [favorite, setFavorite] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState(false)
 
-  function copyPrompt() {
-    navigator.clipboard?.writeText(image.prompt || '')
+  async function copyImageUrl() {
+    if (!image.output_url) return
+    await navigator.clipboard?.writeText(image.output_url)
+    setCopiedUrl(true)
+    window.setTimeout(() => setCopiedUrl(false), 1400)
   }
 
   function fullscreen() {
@@ -165,7 +169,7 @@ function ImageCard({ image, onRegenerate }) {
               <Download className="h-4 w-4" />
             </GlassButton>
           )}
-          <GlassButton variant="ghost" size="icon" className="image-action" type="button" onClick={copyPrompt} aria-label="Copy prompt">
+          <GlassButton variant="ghost" size="icon" className={`image-action ${copiedUrl ? 'is-active' : ''}`} type="button" onClick={copyImageUrl} disabled={!image.output_url} aria-label="Copy image URL">
             <Copy className="h-4 w-4" />
           </GlassButton>
           <GlassButton variant="ghost" size="icon" className="image-action" type="button" onClick={fullscreen} disabled={!image.output_url} aria-label="Open fullscreen">
