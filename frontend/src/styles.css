@@ -3659,6 +3659,42 @@ select.field option {
   gap: 1rem;
 }
 
+.playground-mode-toggle {
+  display: inline-flex;
+  width: fit-content;
+  gap: 0.35rem;
+  border: 1px solid rgba(190, 250, 255, 0.14);
+  border-radius: 999px;
+  padding: 0.32rem;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+}
+
+.playground-mode-toggle button {
+  border: 0;
+  border-radius: 999px;
+  padding: 0.58rem 0.82rem;
+  color: #a1a1aa;
+  font-size: 0.78rem;
+  font-weight: 850;
+  background: transparent;
+  transition: color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.playground-mode-toggle button.is-active {
+  color: #ffffff;
+  background: linear-gradient(135deg, rgba(77, 163, 255, 0.85), rgba(139, 92, 246, 0.82));
+  box-shadow: 0 10px 26px rgba(77, 163, 255, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.26);
+}
+
+.playground-auth-note {
+  margin-top: -0.35rem;
+  color: #a1a1aa;
+  font-size: 0.82rem;
+}
+
 .playground-editor-label {
   color: #a1a1aa;
   font-size: 0.78rem;
@@ -6028,6 +6064,7 @@ body.theme-light .landing-hero-console pre {
 
 body.theme-light .playground-metric,
 body.theme-light .playground-signal,
+body.theme-light .playground-mode-toggle,
 body.theme-light .lg-pill,
 body.theme-light .provider-models span,
 body.theme-light .provider-capabilities span,
@@ -6038,6 +6075,26 @@ body.theme-light .account-warning {
   border-color: rgba(0, 113, 227, 0.16);
   color: #0b3d91;
   background: rgba(0, 113, 227, 0.07);
+}
+
+body.theme-light .playground-mode-toggle {
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow:
+    0 7px 20px rgba(31, 38, 135, 0.055),
+    inset 0 1px 1px rgba(255, 255, 255, 0.68);
+}
+
+body.theme-light .playground-mode-toggle button {
+  color: #4f5662;
+}
+
+body.theme-light .playground-mode-toggle button.is-active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #4da3ff, #8b5cf6);
+}
+
+body.theme-light .playground-auth-note {
+  color: #51545c;
 }
 
 body.theme-light .provider-status.is-connected {

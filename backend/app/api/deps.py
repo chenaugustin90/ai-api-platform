@@ -29,8 +29,18 @@ def get_api_key_user(
     db: Session = Depends(get_db),
 ) -> tuple[User, ApiKey | None]:
     raw_key = x_api_key
-    if authorization and authorization.lower().startswith("bearer ai_"):
-        raw_key = authorization.split(" ", 1)[1]
+    if authorization and authorization.lower().startswith("bearer "):
+        bearer_token = authorization.split(" ", 1)[1]
+        if bearer_token.startswith("ai_"):
+            raw_key = bearer_token
+        elif not raw_key:
+            subject = decode_token(bearer_token)
+            if not subject:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+            user = db.query(User).filter(User.email == subject, User.is_active.is_(True)).first()
+            if not user:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+            return user, None
     if not raw_key:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key required")
 
@@ -43,4 +53,3 @@ def get_api_key_user(
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
     return user, api_key
-

@@ -1,6 +1,6 @@
 import { Check, Clock3, Code2, Copy, Play, Sparkles, TerminalSquare, Zap } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { API_URL, MOCK_PROVIDERS_ENABLED, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
+import { API_URL, api, apiKeyRequest } from '../api/client'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
 
 const ENDPOINTS = {
@@ -30,6 +30,7 @@ const ENDPOINTS = {
 export default function Playground() {
   const [endpoint, setEndpoint] = useState('text')
   const config = ENDPOINTS[endpoint]
+  const [authMode, setAuthMode] = useState('chat')
   const [provider, setProvider] = useState(config.providers[0])
   const [model, setModel] = useState('')
   const [apiKey, setApiKey] = useState('')
@@ -75,11 +76,11 @@ export default function Playground() {
   const snippets = useMemo(() => {
     const payload = parsedRequest || buildPayload(endpoint, provider, model, config.defaults)
     return {
-      curl: makeCurl(config.path, payload),
-      python: makePython(config.path, payload),
-      javascript: makeJavaScript(config.path, payload)
+      curl: makeCurl(config.path, payload, authMode),
+      python: makePython(config.path, payload, authMode),
+      javascript: makeJavaScript(config.path, payload, authMode)
     }
-  }, [config.path, config.defaults, endpoint, model, parsedRequest, provider])
+  }, [authMode, config.path, config.defaults, endpoint, model, parsedRequest, provider])
 
   async function sendRequest(event) {
     event.preventDefault()
@@ -100,9 +101,17 @@ export default function Playground() {
     window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'generating' } }))
     const started = performance.now()
     try {
-      const key = apiKey.trim() || (MOCK_PROVIDERS_ENABLED ? await getOrCreateDevelopmentApiKey() : '')
-      if (!key) throw new Error('API key is required when mock provider mode is disabled.')
-      const result = await apiKeyRequest(config.path, key, payload)
+      let result
+      if (authMode === 'developer') {
+        const key = apiKey.trim()
+        if (!key) throw new Error('API key is required in Developer API Mode.')
+        result = await apiKeyRequest(config.path, key, payload)
+      } else {
+        result = await api(config.path, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        })
+      }
       setResponse(result)
       setResponseTime(Math.round(performance.now() - started))
       setCreditsUsed(config.credits)
@@ -145,17 +154,33 @@ export default function Playground() {
             <span className="lg-pill text-xs">{config.path}</span>
           </div>
 
+          <div className="playground-mode-toggle" role="tablist" aria-label="Playground authentication mode">
+            <button type="button" role="tab" aria-selected={authMode === 'chat'} className={authMode === 'chat' ? 'is-active' : ''} onClick={() => setAuthMode('chat')}>
+              Chat Mode
+            </button>
+            <button type="button" role="tab" aria-selected={authMode === 'developer'} className={authMode === 'developer' ? 'is-active' : ''} onClick={() => setAuthMode('developer')}>
+              Developer API Mode
+            </button>
+          </div>
+          <p className="playground-auth-note">
+            {authMode === 'chat'
+              ? 'Uses your logged-in session automatically. No API key required.'
+              : 'Sends requests exactly like an external developer using X-API-Key.'}
+          </p>
+
           <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.9fr)]">
             <GlassSelect value={endpoint} options={endpointOptions()} onChange={(event) => setEndpoint(event.target.value)} />
             <GlassSelect value={provider} options={config.providers} onChange={(event) => setProvider(event.target.value)} />
             <GlassInput placeholder="Model override" value={model} onChange={(event) => setModel(event.target.value)} />
           </div>
 
-          <GlassInput
-            placeholder={MOCK_PROVIDERS_ENABLED ? 'API key optional in mock mode' : 'API key'}
-            value={apiKey}
-            onChange={(event) => setApiKey(event.target.value)}
-          />
+          {authMode === 'developer' && (
+            <GlassInput
+              placeholder="Developer API key, e.g. ai_..."
+              value={apiKey}
+              onChange={(event) => setApiKey(event.target.value)}
+            />
+          )}
 
           <label className="playground-editor-label" htmlFor="playground-request">Prompt / request body</label>
           <GlassTextarea
@@ -232,16 +257,25 @@ function formatJson(value) {
   return JSON.stringify(value, null, 2)
 }
 
-function makeCurl(path, payload) {
-  return `curl -X POST ${API_URL}${path} \\\n  -H "Content-Type: application/json" \\\n  -H "X-API-Key: $AI_API_KEY" \\\n  -d '${shellSingleQuote(JSON.stringify(payload))}'`
+function authHeader(mode) {
+  return mode === 'developer'
+    ? { name: 'X-API-Key', value: '$AI_API_KEY', python: '"X-API-Key": AI_API_KEY', javascript: '"X-API-Key": AI_API_KEY' }
+    : { name: 'Authorization', value: 'Bearer $JWT_TOKEN', python: '"Authorization": f"Bearer {JWT_TOKEN}"', javascript: '"Authorization": `Bearer ${JWT_TOKEN}`' }
 }
 
-function makePython(path, payload) {
-  return `import json\nimport requests\n\npayload = json.loads('''${formatJson(payload)}''')\n\nresponse = requests.post(\n    "${API_URL}${path}",\n    headers={"Content-Type": "application/json", "X-API-Key": AI_API_KEY},\n    json=payload\n)\nprint(response.json())`
+function makeCurl(path, payload, mode) {
+  const header = authHeader(mode)
+  return `curl -X POST ${API_URL}${path} \\\n  -H "Content-Type: application/json" \\\n  -H "${header.name}: ${header.value}" \\\n  -d '${shellSingleQuote(JSON.stringify(payload))}'`
 }
 
-function makeJavaScript(path, payload) {
-  return `const response = await fetch("${API_URL}${path}", {\n  method: "POST",\n  headers: {\n    "Content-Type": "application/json",\n    "X-API-Key": AI_API_KEY\n  },\n  body: JSON.stringify(${formatJson(payload).replaceAll('\n', '\n  ')})\n});\n\nconsole.log(await response.json());`
+function makePython(path, payload, mode) {
+  const header = authHeader(mode)
+  return `import json\nimport requests\n\npayload = json.loads('''${formatJson(payload)}''')\n\nresponse = requests.post(\n    "${API_URL}${path}",\n    headers={"Content-Type": "application/json", ${header.python}},\n    json=payload\n)\nprint(response.json())`
+}
+
+function makeJavaScript(path, payload, mode) {
+  const header = authHeader(mode)
+  return `const response = await fetch("${API_URL}${path}", {\n  method: "POST",\n  headers: {\n    "Content-Type": "application/json",\n    ${header.javascript}\n  },\n  body: JSON.stringify(${formatJson(payload).replaceAll('\n', '\n  ')})\n});\n\nconsole.log(await response.json());`
 }
 
 function shellSingleQuote(value) {
