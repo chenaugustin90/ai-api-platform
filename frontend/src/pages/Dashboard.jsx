@@ -4,6 +4,7 @@ import { api, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
 import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
+import { useAuth } from '../context/AuthContext'
 import { AlertTriangle, BookOpen, CalendarClock, Check, Clock3, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, KeyRound, Play, RotateCcw, Settings, Sparkles, SquareTerminal, TerminalSquare, Video, Wand2, X, Zap } from 'lucide-react'
 import { savePromptToLibrary, saveRecentPromptGlobal } from '../utils/promptLibrary'
 
@@ -42,6 +43,7 @@ const GENERATOR_CONFIG = {
 
 export default function Dashboard() {
   const toast = useToast()
+  const { user } = useAuth()
   const [data, setData] = useState(null)
   const [usageEvents, setUsageEvents] = useState([])
   const [searchParams, setSearchParams] = useSearchParams()
@@ -222,11 +224,7 @@ export default function Dashboard() {
           mode={searchParams.get('mode')}
         />
       )}
-      <div>
-        <p className="eyebrow mb-2">Command Center</p>
-        <h1 className="title-gradient text-3xl font-bold sm:text-4xl">Dashboard</h1>
-        <p className="muted mt-2 text-sm">Credits, usage, and recent media generations.</p>
-      </div>
+      <DashboardHero user={user} usage={usage} billing={data.billing} recentGenerations={recentGenerations} />
       {missingProviders.length > 0 && <ProviderWarning missingProviders={missingProviders} />}
       <DashboardGenerator
         generator={generator}
@@ -269,6 +267,43 @@ export default function Dashboard() {
       <Gallery title="Generated videos" items={generatedVideos} type="video" />
     </div>
   )
+}
+
+function DashboardHero({ user, usage, billing, recentGenerations }) {
+  const displayName = getDisplayName(user)
+  const plan = billing?.subscription_tier || 'free'
+  const status = billing?.subscription_status || 'active'
+  const generationCount = recentGenerations.length
+
+  return (
+    <section className="dashboard-hero grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+      <div>
+        <p className="eyebrow mb-2">Command Center</p>
+        <h1 className="title-gradient dashboard-greeting text-3xl font-bold sm:text-4xl">Welcome back, {displayName}</h1>
+        <p className="muted mt-2 text-sm">Your AI workspace is ready: {Number(usage.credits_remaining || 0).toLocaleString()} credits, {Number(usage.total_events || 0).toLocaleString()} requests, and {generationCount} recent generations.</p>
+      </div>
+      <div className="dashboard-account-summary flex flex-wrap gap-2 md:justify-end" aria-label="Account summary">
+        <span className="lg-pill">
+          <strong>{Number(usage.credits_remaining || 0).toLocaleString()}</strong>
+          credits
+        </span>
+        <span className="lg-pill">
+          <strong>{plan}</strong>
+          plan
+        </span>
+        <span className="lg-pill">
+          <strong>{status}</strong>
+          status
+        </span>
+      </div>
+    </section>
+  )
+}
+
+function getDisplayName(user) {
+  if (user?.full_name) return user.full_name.split(' ')[0]
+  if (user?.email) return user.email.split('@')[0]
+  return 'there'
 }
 
 function getMissingProviders(providerStatus = {}) {
