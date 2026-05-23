@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import logging
+
 import httpx
 from fastapi import HTTPException
 
 from app.core.config import get_settings
 from app.providers.base import ProviderResult
-from app.providers.utils import provider_not_configured, provider_request_failed, provider_timeout, provider_unavailable
+from app.providers.utils import provider_execution_mode, provider_not_configured, provider_request_failed, provider_timeout, provider_unavailable
 
 settings = get_settings()
+logger = logging.getLogger("app.providers")
 
 TEXT_DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
@@ -18,11 +21,31 @@ TEXT_DEFAULT_MODELS = {
 
 
 async def generate_text(provider: str, prompt: str, model: str | None, max_tokens: int) -> ProviderResult:
+    if provider not in TEXT_DEFAULT_MODELS:
+        raise HTTPException(status_code=400, detail="Unsupported text provider")
+
     selected_model = model or TEXT_DEFAULT_MODELS[provider]
+    execution_mode = provider_execution_mode(provider)
+    logger.info(
+        "Text generation provider=%s model=%s execution_mode=%s",
+        provider,
+        selected_model,
+        execution_mode,
+    )
+
+    if execution_mode == "mock":
+        logger.info("Text generation using mock path provider=%s model=%s", provider, selected_model)
+        return _mock_text(provider, selected_model, prompt)
+
+    if execution_mode != "real":
+        logger.info("Text generation unavailable provider=%s model=%s", provider, selected_model)
+        return provider_not_configured(provider, selected_model, prompt, _mock_text)
+
+    logger.info("Text generation using real provider path provider=%s model=%s", provider, selected_model)
     if provider == "openai":
-        return await _openai(prompt, selected_model, max_tokens)
-    if provider == "deepseek":
-        return await _openai_compatible(
+        result = await _openai(prompt, selected_model, max_tokens)
+    elif provider == "deepseek":
+        result = await _openai_compatible(
             "deepseek",
             f"{settings.deepseek_base_url.rstrip('/')}/chat/completions",
             settings.deepseek_api_key,
@@ -30,10 +53,10 @@ async def generate_text(provider: str, prompt: str, model: str | None, max_token
             selected_model,
             max_tokens,
         )
-    if provider == "claude":
-        return await _claude(prompt, selected_model, max_tokens)
-    if provider == "qwen":
-        return await _openai_compatible(
+    elif provider == "claude":
+        result = await _claude(prompt, selected_model, max_tokens)
+    elif provider == "qwen":
+        result = await _openai_compatible(
             "qwen",
             f"{settings.qwen_base_url.rstrip('/')}/chat/completions",
             settings.qwen_api_key,
@@ -41,7 +64,22 @@ async def generate_text(provider: str, prompt: str, model: str | None, max_token
             selected_model,
             max_tokens,
         )
-    raise HTTPException(status_code=400, detail="Unsupported text provider")
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported text provider")
+
+    if (result.text or "").startswith("[Mock "):
+        logger.error("Real provider path returned mock text provider=%s model=%s", provider, selected_model)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "provider": provider,
+                "code": "mock_response_blocked",
+                "message": "Provider is configured for real execution, but a legacy mock response was produced. Check backend deployment and provider routing.",
+                "retryable": False,
+            },
+        )
+    logger.info("Text generation completed provider=%s execution_mode=real", provider)
+    return result
 
 
 async def _openai(prompt: str, model: str, max_tokens: int) -> ProviderResult:

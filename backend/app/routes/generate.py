@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -8,6 +10,7 @@ from app.db.session import get_db
 from app.models import Generation, User
 from app.providers.image import generate_image
 from app.providers.text import generate_text
+from app.providers.utils import provider_execution_mode
 from app.providers.video import generate_video
 from app.schemas.generation import (
     GenerationResponse,
@@ -20,12 +23,19 @@ from app.schemas.generation import (
 from app.services.usage import estimate_text_tokens, record_usage
 
 router = APIRouter(prefix="/generate", tags=["generation"])
+logger = logging.getLogger("app.providers")
 
 
 @router.post("/text", response_model=TextGenerationResponse)
 async def text(payload: TextGenerationRequest, auth=Depends(get_api_key_user), db: Session = Depends(get_db)):
     user, api_key = auth
     _ensure_credits(user, 1)
+    logger.info(
+        "Generation request modality=text provider=%s execution_mode=%s auth=%s",
+        payload.provider,
+        provider_execution_mode(payload.provider),
+        "api_key" if api_key else "jwt",
+    )
     result = await generate_text(payload.provider, payload.prompt, payload.model, payload.max_tokens)
     usage = result.usage or {}
     prompt_tokens = usage.get("prompt_tokens")

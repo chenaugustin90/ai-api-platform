@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import json
 
 import httpx
 from fastapi import HTTPException
@@ -115,6 +116,7 @@ def provider_not_configured(provider: str, model: str, prompt: str, mock_factory
     env_var = PROVIDER_ENV_VARS.get(provider, f"{provider.upper()}_API_KEY")
     logger.warning("%s is missing; %s provider request cannot use the real upstream API.", env_var, provider)
     if effective_allow_mock_providers():
+        logger.info("Provider mock fallback selected provider=%s execution_mode=mock", provider)
         return mock_factory(provider, model, prompt)
     label = PROVIDER_LABELS.get(provider, provider.title())
     raise HTTPException(
@@ -126,7 +128,10 @@ def provider_not_configured(provider: str, model: str, prompt: str, mock_factory
 def provider_request_failed(provider: str, error_text: str, upstream_status: int | None = None) -> HTTPException:
     label = PROVIDER_LABELS.get(provider, provider.title())
     logger.warning("%s provider request failed: %s", provider, error_text[:800])
+    upstream_message = _extract_upstream_message(error_text)
     code, status_code, message, retryable = _classify_provider_failure(label, upstream_status)
+    if upstream_message:
+        message = f"{message} Upstream said: {upstream_message}"
     return HTTPException(
         status_code=status_code,
         detail={
@@ -136,6 +141,21 @@ def provider_request_failed(provider: str, error_text: str, upstream_status: int
             "retryable": retryable,
         },
     )
+
+
+def _extract_upstream_message(error_text: str) -> str:
+    try:
+        data = json.loads(error_text)
+    except (TypeError, ValueError):
+        return error_text[:260].strip()
+    error = data.get("error") if isinstance(data, dict) else None
+    if isinstance(error, dict):
+        return str(error.get("message") or error.get("type") or "")[:260].strip()
+    if isinstance(error, str):
+        return error[:260].strip()
+    if isinstance(data, dict):
+        return str(data.get("message") or data.get("detail") or "")[:260].strip()
+    return ""
 
 
 def provider_timeout(provider: str) -> HTTPException:
