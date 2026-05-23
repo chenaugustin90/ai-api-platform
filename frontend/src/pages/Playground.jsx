@@ -1,6 +1,6 @@
 import { Check, Clock3, Code2, Copy, Play, Sparkles, TerminalSquare, Zap } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { API_URL, api, apiKeyRequest } from '../api/client'
+import { API_URL, api, apiKeyRequest, getOrCreateDevelopmentApiKey } from '../api/client'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
 
 const ENDPOINTS = {
@@ -107,10 +107,7 @@ export default function Playground() {
         if (!key) throw new Error('API key is required in Developer API Mode.')
         result = await apiKeyRequest(config.path, key, payload)
       } else {
-        result = await api(config.path, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        })
+        result = await sendChatModeRequest(config.path, payload)
       }
       setResponse(result)
       setResponseTime(Math.round(performance.now() - started))
@@ -239,6 +236,34 @@ export default function Playground() {
       </div>
     </div>
   )
+}
+
+async function sendChatModeRequest(path, payload) {
+  try {
+    return await api(path, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+  } catch (err) {
+    if (!isApiKeyAuthError(err)) throw err
+    return sendWithSessionApiKey(path, payload)
+  }
+}
+
+async function sendWithSessionApiKey(path, payload) {
+  let key = await getOrCreateDevelopmentApiKey()
+  try {
+    return await apiKeyRequest(path, key, payload)
+  } catch (err) {
+    if (!isApiKeyAuthError(err)) throw err
+    localStorage.removeItem('development_api_key')
+    key = await getOrCreateDevelopmentApiKey()
+    return apiKeyRequest(path, key, payload)
+  }
+}
+
+function isApiKeyAuthError(err) {
+  return /api key required|invalid api key/i.test(err?.message || '')
 }
 
 function buildPayload(endpoint, provider, model, defaults) {
