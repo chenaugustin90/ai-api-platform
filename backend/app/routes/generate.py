@@ -59,27 +59,34 @@ async def text(payload: TextGenerationRequest, auth=Depends(get_api_key_user), d
 @router.post("/image", response_model=MediaGenerationResponse)
 async def image(payload: ImageGenerationRequest, auth=Depends(get_api_key_user), db: Session = Depends(get_db)):
     user, api_key = auth
-    _ensure_credits(user, 10)
-    result = await generate_image(payload.provider, payload.prompt, payload.model, payload.size)
-    generation = Generation(
-        user_id=user.id,
-        modality="image",
-        provider=result.provider,
-        model=result.model,
-        prompt=payload.prompt,
-        output_url=result.output_url,
-        status=result.status,
-    )
-    db.add(generation)
+    credit_cost = 10 * payload.count
+    _ensure_credits(user, credit_cost)
+    result = await generate_image(payload.provider, payload.prompt, payload.model, payload.size, payload.quality, payload.count)
+    image_urls = result.output_urls or ([result.output_url] if result.output_url else [])
+    generations = []
+    for output_url in image_urls or [None]:
+        generation = Generation(
+            user_id=user.id,
+            modality="image",
+            provider=result.provider,
+            model=result.model,
+            prompt=payload.prompt,
+            output_url=output_url,
+            status=result.status,
+        )
+        db.add(generation)
+        generations.append(generation)
     db.commit()
+    generation = generations[0]
     db.refresh(generation)
-    record_usage(db, user, api_key, "image", result.provider, result.model, credits_used=10)
+    record_usage(db, user, api_key, "image", result.provider, result.model, credits_used=credit_cost)
     return MediaGenerationResponse(
         id=generation.id,
         provider=result.provider,
         model=result.model,
         status=result.status,
         output_url=result.output_url,
+        image_urls=image_urls,
     )
 
 

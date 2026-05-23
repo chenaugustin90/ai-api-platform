@@ -29,6 +29,8 @@ class ImageGenerationRequest(BaseModel):
     provider: ImageProvider = "openai"
     model: str | None = None
     size: str = "1024x1024"
+    quality: str = "auto"
+    count: int = Field(default=1, ge=1, le=4)
 
 
 class VideoGenerationRequest(BaseModel):
@@ -44,6 +46,7 @@ class MediaGenerationResponse(BaseModel):
     model: str
     status: str
     output_url: str | None
+    image_urls: list[str] = Field(default_factory=list)
 
 
 class GenerationResponse(BaseModel):

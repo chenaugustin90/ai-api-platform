@@ -21,19 +21,25 @@ IMAGE_DEFAULT_MODELS = {
 }
 
 
-async def generate_image(provider: str, prompt: str, model: str | None, size: str) -> ProviderResult:
+async def generate_image(provider: str, prompt: str, model: str | None, size: str, quality: str = "auto", count: int = 1) -> ProviderResult:
     selected_model = model or IMAGE_DEFAULT_MODELS[provider]
     if provider == "openai":
-        return await _openai_image(prompt, selected_model, size)
+        return await _openai_image(prompt, selected_model, size, quality, count)
     if provider == "flux":
         return await _flux_image(prompt, selected_model, size)
     raise HTTPException(status_code=400, detail="Unsupported image provider")
 
 
-async def _openai_image(prompt: str, model: str, size: str) -> ProviderResult:
+async def _openai_image(prompt: str, model: str, size: str, quality: str, count: int) -> ProviderResult:
     if not settings.openai_api_key:
         return provider_not_configured("openai", model, prompt, _mock_image)
-    payload = {"model": model, "prompt": prompt, "size": size, "n": 1}
+    payload = {
+        "model": model,
+        "prompt": prompt,
+        "size": _normalize_openai_image_size(size),
+        "quality": _normalize_openai_image_quality(quality),
+        "n": _normalize_openai_image_count(count),
+    }
     try:
         async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
@@ -64,12 +70,12 @@ async def _openai_image(prompt: str, model: str, size: str) -> ProviderResult:
     images = data.get("data") or []
     if not images:
         raise provider_request_failed("openai", "Missing image data in provider response")
-    image = images[0]
-    output = image.get("url")
-    if not output and image.get("b64_json"):
-        output = f"data:image/png;base64,{image['b64_json']}"
+    outputs = [_image_output_url(image) for image in images]
+    outputs = [output for output in outputs if output]
+    if not outputs:
+        raise provider_request_failed("openai", "Missing image URL data in provider response")
     usage = data.get("usage") or {}
-    return ProviderResult(provider="openai", model=model, output_url=output, usage=usage)
+    return ProviderResult(provider="openai", model=model, output_url=outputs[0], output_urls=outputs, usage=usage)
 
 
 async def _flux_image(prompt: str, model: str, size: str) -> ProviderResult:
@@ -126,6 +132,33 @@ def _should_fallback_openai_image_model(response: httpx.Response, model: str) ->
         return False
     error_text = response.text.lower()
     return any(marker in error_text for marker in ("model", "not found", "unsupported", "does not exist", "invalid"))
+
+
+def _image_output_url(image: dict) -> str | None:
+    output = image.get("url")
+    if not output and image.get("b64_json"):
+        output = f"data:image/png;base64,{image['b64_json']}"
+    return output
+
+
+def _normalize_openai_image_size(size: str) -> str:
+    if size in {"1024x1024", "1536x1024", "1024x1536", "auto"}:
+        return size
+    return "1024x1024"
+
+
+def _normalize_openai_image_quality(quality: str) -> str:
+    if quality in {"auto", "low", "medium", "high"}:
+        return quality
+    return "auto"
+
+
+def _normalize_openai_image_count(count: int) -> int:
+    try:
+        value = int(count)
+    except (TypeError, ValueError):
+        value = 1
+    return max(1, min(value, 4))
 
 
 def _parse_size(size: str) -> tuple[int, int]:

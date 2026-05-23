@@ -15,9 +15,42 @@ const IMAGE_EXAMPLES = [
   'VisionOS style product render of a glass neural engine',
   'Futuristic SaaS dashboard floating inside liquid glass'
 ]
+const ASPECT_RATIO_OPTIONS = [
+  { value: '1024x1024', label: 'Square 1:1' },
+  { value: '1536x1024', label: 'Landscape 3:2' },
+  { value: '1024x1536', label: 'Portrait 2:3' },
+  { value: 'auto', label: 'Auto ratio' }
+]
+const STYLE_OPTIONS = [
+  { value: 'auto', label: 'Style auto' },
+  { value: 'cinematic', label: 'Cinematic' },
+  { value: 'photoreal', label: 'Photoreal' },
+  { value: 'product', label: 'Product render' },
+  { value: 'illustration', label: 'Illustration' },
+  { value: 'minimal', label: 'Minimal glass' }
+]
+const COUNT_OPTIONS = [
+  { value: '1', label: '1 image' },
+  { value: '2', label: '2 images' },
+  { value: '3', label: '3 images' },
+  { value: '4', label: '4 images' }
+]
+const QUALITY_OPTIONS = [
+  { value: 'auto', label: 'Auto quality' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' }
+]
+const STYLE_PROMPTS = {
+  cinematic: 'Cinematic lighting, premium composition, rich depth, refined color grading.',
+  photoreal: 'Photorealistic rendering, natural materials, realistic optics, high detail.',
+  product: 'Premium product render, clean studio lighting, precise materials, commercial polish.',
+  illustration: 'Editorial illustration style, expressive shapes, sophisticated color, polished finish.',
+  minimal: 'Minimal Apple VisionOS liquid glass aesthetic, airy composition, subtle translucency.'
+}
 
 export default function ImageGeneration() {
-  const [form, setForm] = useState({ provider: 'openai', model: 'gpt-image-2', prompt: '', size: '1024x1024' })
+  const [form, setForm] = useState({ provider: 'openai', model: 'gpt-image-2', prompt: '', size: '1024x1024', style: 'auto', count: '1', quality: 'auto' })
   const [images, setImages] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -47,21 +80,27 @@ export default function ImageGeneration() {
         body: JSON.stringify({
           provider: route.provider,
           model: route.model || null,
-          prompt,
-          size: route.size || '1024x1024'
+          prompt: buildStyledPrompt(prompt, route.style),
+          size: route.size || '1024x1024',
+          quality: route.quality || 'auto',
+          count: Number(route.count) || 1
         })
       })
-      const image = {
-        id: result.id || crypto.randomUUID(),
+      const imageUrls = result.image_urls?.length ? result.image_urls : [result.output_url || result.image_url || result.url || result.image_urls?.[0]].filter(Boolean)
+      const generatedImages = imageUrls.map((outputUrl, index) => ({
+        id: `${result.id || crypto.randomUUID()}-${index}`,
         prompt,
         provider: result.provider,
         model: result.model || route.model,
         size: route.size || '1024x1024',
+        style: route.style || 'auto',
+        count: '1',
+        quality: route.quality || 'auto',
         status: result.status,
-        output_url: result.output_url || result.image_url || result.url || result.image_urls?.[0] || null,
+        output_url: outputUrl,
         created_at: new Date().toISOString()
-      }
-      updateImages((current) => [image, ...current].slice(0, IMAGE_HISTORY_LIMIT))
+      }))
+      updateImages((current) => [...generatedImages, ...current].slice(0, IMAGE_HISTORY_LIMIT))
       saveRecentPrompt(IMAGE_PROMPT_HISTORY_KEY, prompt)
     } catch (err) {
       setError(err.message)
@@ -101,7 +140,7 @@ export default function ImageGeneration() {
             <span className="composer-spark"><Sparkles className="h-4 w-4" /></span>
             Prompt Studio
           </div>
-          <div className="lg-pill text-xs">{form.provider} / {form.size}</div>
+          <div className="lg-pill text-xs">{form.provider} / {form.size} / {form.quality}</div>
         </div>
 
         <GlassTextarea
@@ -113,8 +152,13 @@ export default function ImageGeneration() {
 
         <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.8fr)]">
           <GlassSelect value={form.provider} options={['openai', 'flux']} onChange={(e) => setForm({ ...form, provider: e.target.value, model: e.target.value === 'openai' ? 'gpt-image-2' : 'flux-2-pro-preview' })} />
-          <GlassInput placeholder="Size" value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} />
+          <GlassSelect value={form.size} options={ASPECT_RATIO_OPTIONS} onChange={(e) => setForm({ ...form, size: e.target.value })} />
           <GlassInput placeholder="Model override" value={form.model} onChange={(e) => setForm({ ...form, model: e.target.value })} />
+        </div>
+        <div className="grid gap-3 lg:grid-cols-3">
+          <GlassSelect value={form.style} options={STYLE_OPTIONS} onChange={(e) => setForm({ ...form, style: e.target.value })} />
+          <GlassSelect value={form.count} options={COUNT_OPTIONS} onChange={(e) => setForm({ ...form, count: e.target.value })} />
+          <GlassSelect value={form.quality} options={QUALITY_OPTIONS} onChange={(e) => setForm({ ...form, quality: e.target.value })} />
         </div>
 
         <div className="sticky-action-row grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
@@ -154,7 +198,7 @@ export default function ImageGeneration() {
               <ImageCard
                 key={`${image.id}-${index}`}
                 image={image}
-                onRegenerate={() => generate(image.prompt, image)}
+                onRegenerate={() => generate(image.prompt, { ...image, count: '1' })}
                 onDelete={() => deleteImage(image.id)}
               />
             ))}
@@ -303,6 +347,11 @@ function replaceAllImages(db, images) {
 
 function sortNewestFirst(a, b) {
   return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+}
+
+function buildStyledPrompt(prompt, style) {
+  const stylePrompt = STYLE_PROMPTS[style]
+  return stylePrompt ? `${prompt}\n\nStyle direction: ${stylePrompt}` : prompt
 }
 
 function formatImageDate(value) {
