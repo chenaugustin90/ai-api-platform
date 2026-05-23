@@ -80,8 +80,8 @@ PYTHON_VERSION=3.11.9
 SECRET_KEY=<secret: generate a long random value>
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 DATABASE_URL=sqlite:///./ai_platform.db
-FRONTEND_URL=https://ai-api-platform.vercel.app
-CORS_ORIGINS=https://ai-api-platform.vercel.app
+FRONTEND_URL=https://ai-api-platform-silk.vercel.app
+CORS_ORIGINS=https://ai-api-platform-silk.vercel.app
 ALLOW_MOCK_PROVIDERS=false
 
 OPENAI_API_KEY=<secret>
@@ -109,7 +109,7 @@ STRIPE_PRICE_PRO=<price id>
 `FRONTEND_URL` and `CORS_ORIGINS` must include the final Vercel production domain. The backend also allows `https://*.vercel.app` preview deployments by regex. For custom domains, set `CORS_ORIGINS` to a comma-separated list:
 
 ```bash
-CORS_ORIGINS=https://ai-api-platform.vercel.app,https://www.yourdomain.com
+CORS_ORIGINS=https://ai-api-platform-silk.vercel.app,https://www.yourdomain.com
 ```
 
 A template is available at `backend/.env.production.example`.
