@@ -8,7 +8,7 @@ from app.api.deps import get_current_user
 from app.core.config import get_settings
 from app.models import User
 from app.providers.text import generate_text
-from app.providers.utils import provider_key_status
+from app.providers.utils import provider_diagnostics, provider_key_status
 from app.schemas.providers import ProviderStatusResponse, ProviderTestRequest, ProviderTestResponse
 
 router = APIRouter(prefix="/providers", tags=["providers"])
@@ -44,7 +44,7 @@ PROVIDER_DETAILS = {
     "claude": {
         "name": "Claude",
         "env_var": "ANTHROPIC_API_KEY",
-        "models": ["claude-3-5-sonnet-latest", "claude-3-5-haiku-latest"],
+        "models": ["claude-sonnet-4-20250514", "claude-3-7-sonnet-latest", "claude-3-5-haiku-latest"],
         "test_model": "claude-3-5-haiku-latest",
         "docs_url": "https://docs.anthropic.com/",
         "setup_steps": [
@@ -59,17 +59,20 @@ PROVIDER_DETAILS = {
 
 @router.get("/status", response_model=ProviderStatusResponse)
 def status(_: User = Depends(get_current_user)):
-    key_status = provider_key_status()
+    diagnostics = {provider["id"]: provider for provider in provider_diagnostics()}
     providers = []
     for provider_id, details in PROVIDER_DETAILS.items():
-        configured = key_status.get(provider_id, False)
+        diagnostic = diagnostics[provider_id]
+        configured = diagnostic["configured"]
         providers.append(
             {
                 "id": provider_id,
                 "name": details["name"],
                 "configured": configured,
-                "status": "connected" if configured else "missing",
+                "status": diagnostic["status"],
                 "env_var": details["env_var"],
+                "capabilities": diagnostic["capabilities"],
+                "message": diagnostic["message"],
                 "models": details["models"],
                 "docs_url": details["docs_url"],
                 "setup_steps": details["setup_steps"],

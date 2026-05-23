@@ -23,7 +23,7 @@ const GENERATOR_CONFIG = {
     models: {
       openai: ['gpt-4o-mini', 'gpt-4.1-mini'],
       deepseek: ['deepseek-v4-pro', 'deepseek-chat', 'deepseek-reasoner'],
-      claude: ['claude-3-5-sonnet-latest', 'claude-3-5-haiku-latest']
+      claude: ['claude-sonnet-4-20250514', 'claude-3-7-sonnet-latest', 'claude-3-5-haiku-latest']
     },
     prompt: 'Write a concise launch note for a premium AI API platform.',
     extra: { max_tokens: 512 }

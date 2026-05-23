@@ -13,6 +13,8 @@ class ProviderStatus(BaseModel):
     configured: bool
     status: str
     env_var: str
+    capabilities: list[str]
+    message: str
     models: list[str]
     docs_url: str
     setup_steps: list[str]

@@ -5,14 +5,14 @@ from fastapi import HTTPException
 
 from app.core.config import get_settings
 from app.providers.base import ProviderResult
-from app.providers.utils import provider_not_configured, provider_request_failed
+from app.providers.utils import provider_not_configured, provider_request_failed, provider_timeout, provider_unavailable
 
 settings = get_settings()
 
 TEXT_DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "deepseek": "deepseek-v4-pro",
-    "claude": "claude-3-5-sonnet-latest",
+    "claude": "claude-sonnet-4-20250514",
     "qwen": "qwen-plus",
 }
 
@@ -66,18 +66,23 @@ async def _claude(prompt: str, model: str, max_tokens: int) -> ProviderResult:
         "max_tokens": max_tokens,
         "messages": [{"role": "user", "content": prompt}],
     }
-    async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(
-            f"{settings.anthropic_base_url.rstrip('/')}/messages",
-            headers={
-                "x-api-key": settings.anthropic_api_key,
-                "anthropic-version": "2023-06-01",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-        )
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(
+                f"{settings.anthropic_base_url.rstrip('/')}/messages",
+                headers={
+                    "x-api-key": settings.anthropic_api_key,
+                    "anthropic-version": "2023-06-01",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+            )
+    except httpx.TimeoutException:
+        raise provider_timeout("claude")
+    except httpx.RequestError as exc:
+        raise provider_unavailable("claude", exc)
     if response.status_code >= 400:
-        raise provider_request_failed("claude", response.text)
+        raise provider_request_failed("claude", response.text, response.status_code)
 
     data = response.json()
     content = data.get("content") or []
@@ -106,19 +111,31 @@ async def _openai_compatible(
         "messages": [{"role": "user", "content": prompt}],
         "max_tokens": max_tokens,
     }
-    async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(
-            url,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            json=payload,
-        )
+    if provider == "deepseek" and model.startswith("deepseek-v4-"):
+        payload["thinking"] = {"type": "disabled"}
+    try:
+        async with httpx.AsyncClient(timeout=60) as client:
+            response = await client.post(
+                url,
+                headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+                json=payload,
+            )
+    except httpx.TimeoutException:
+        raise provider_timeout(provider)
+    except httpx.RequestError as exc:
+        raise provider_unavailable(provider, exc)
     if response.status_code >= 400:
-        raise provider_request_failed(provider, response.text)
+        raise provider_request_failed(provider, response.text, response.status_code)
     data = response.json()
+    choices = data.get("choices") or []
+    if not choices:
+        raise provider_request_failed(provider, "Missing choices in provider response")
+    message = choices[0].get("message") or {}
+    text = message.get("content") or message.get("reasoning_content") or ""
     return ProviderResult(
         provider=provider,
         model=model,
-        text=data["choices"][0]["message"]["content"],
+        text=text,
         usage=data.get("usage", {}),
     )
 

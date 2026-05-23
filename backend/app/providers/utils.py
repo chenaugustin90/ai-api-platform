@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 
+import httpx
 from fastapi import HTTPException
 
 from app.core.config import get_settings
@@ -38,6 +39,39 @@ def provider_key_status() -> dict[str, bool]:
     }
 
 
+def provider_diagnostics() -> list[dict]:
+    key_status = provider_key_status()
+    return [
+        {
+            "id": "openai",
+            "name": "OpenAI",
+            "configured": key_status["openai"],
+            "status": "connected" if key_status["openai"] else "disconnected",
+            "env_var": "OPENAI_API_KEY",
+            "capabilities": ["text", "image"],
+            "message": _provider_message("openai", key_status["openai"]),
+        },
+        {
+            "id": "deepseek",
+            "name": "DeepSeek",
+            "configured": key_status["deepseek"],
+            "status": "connected" if key_status["deepseek"] else "disconnected",
+            "env_var": "DEEPSEEK_API_KEY",
+            "capabilities": ["text"],
+            "message": _provider_message("deepseek", key_status["deepseek"]),
+        },
+        {
+            "id": "claude",
+            "name": "Claude",
+            "configured": key_status["claude"],
+            "status": "connected" if key_status["claude"] else "disconnected",
+            "env_var": "ANTHROPIC_API_KEY",
+            "capabilities": ["text"],
+            "message": _provider_message("claude", key_status["claude"]),
+        },
+    ]
+
+
 def log_provider_configuration() -> None:
     for provider, configured in provider_key_status().items():
         if configured:
@@ -58,10 +92,89 @@ def provider_not_configured(provider: str, model: str, prompt: str, mock_factory
     )
 
 
-def provider_request_failed(provider: str, error_text: str, status_code: int = 502) -> HTTPException:
+def provider_request_failed(provider: str, error_text: str, upstream_status: int | None = None) -> HTTPException:
     label = PROVIDER_LABELS.get(provider, provider.title())
     logger.warning("%s provider request failed: %s", provider, error_text[:800])
+    code, status_code, message, retryable = _classify_provider_failure(label, upstream_status)
     return HTTPException(
         status_code=status_code,
-        detail=f"{label} request failed. Check the provider key, model access, quota, and request settings.",
+        detail={
+            "provider": label,
+            "code": code,
+            "message": message,
+            "retryable": retryable,
+        },
+    )
+
+
+def provider_timeout(provider: str) -> HTTPException:
+    label = PROVIDER_LABELS.get(provider, provider.title())
+    logger.warning("%s provider request timed out.", provider)
+    return HTTPException(
+        status_code=504,
+        detail={
+            "provider": label,
+            "code": "timeout",
+            "message": f"{label} timed out. Please retry in a moment or choose another provider.",
+            "retryable": True,
+        },
+    )
+
+
+def provider_unavailable(provider: str, exc: httpx.RequestError) -> HTTPException:
+    label = PROVIDER_LABELS.get(provider, provider.title())
+    logger.warning("%s provider is unavailable: %s", provider, str(exc)[:800])
+    return HTTPException(
+        status_code=503,
+        detail={
+            "provider": label,
+            "code": "unavailable_provider",
+            "message": f"{label} is currently unavailable. Check provider status, networking, and base URL settings.",
+            "retryable": True,
+        },
+    )
+
+
+def _provider_message(provider: str, configured: bool) -> str:
+    env_var = PROVIDER_ENV_VARS.get(provider, f"{provider.upper()}_API_KEY")
+    label = PROVIDER_LABELS.get(provider, provider.title())
+    if configured:
+        return f"{label} key is present. Run a connection test to verify model access and quota."
+    return f"{label} is disconnected. Add {env_var} in Render environment variables, then redeploy."
+
+
+def _classify_provider_failure(label: str, upstream_status: int | None) -> tuple[str, int, str, bool]:
+    if upstream_status in {401, 403}:
+        return (
+            "invalid_key",
+            401,
+            f"{label} rejected the API key or account permissions. Check the environment variable and provider account access.",
+            False,
+        )
+    if upstream_status == 429:
+        return (
+            "rate_limit",
+            429,
+            f"{label} rate limit or quota was reached. Wait briefly, reduce traffic, or update provider billing limits.",
+            True,
+        )
+    if upstream_status in {408, 504}:
+        return (
+            "timeout",
+            504,
+            f"{label} timed out. Please retry in a moment or choose another provider.",
+            True,
+        )
+    if upstream_status and upstream_status >= 500:
+        return (
+            "unavailable_provider",
+            503,
+            f"{label} is currently unavailable. Retry later or route traffic to another provider.",
+            True,
+        )
+    return (
+        "provider_error",
+        502,
+        f"{label} request failed. Check model access, request settings, provider quota, and account configuration.",
+        False,
     )

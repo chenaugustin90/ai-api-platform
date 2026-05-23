@@ -9,7 +9,7 @@ from fastapi import HTTPException
 
 from app.core.config import get_settings
 from app.providers.base import ProviderResult
-from app.providers.utils import provider_not_configured, provider_request_failed
+from app.providers.utils import provider_not_configured, provider_request_failed, provider_timeout, provider_unavailable
 
 settings = get_settings()
 logger = logging.getLogger("app.providers")
@@ -34,29 +34,37 @@ async def _openai_image(prompt: str, model: str, size: str) -> ProviderResult:
     if not settings.openai_api_key:
         return provider_not_configured("openai", model, prompt, _mock_image)
     payload = {"model": model, "prompt": prompt, "size": size, "n": 1}
-    async with httpx.AsyncClient(timeout=120) as client:
-        response = await client.post(
-            f"{settings.openai_base_url.rstrip('/')}/images/generations",
-            headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
-            json=payload,
-        )
-        if _should_fallback_openai_image_model(response, model):
-            logger.warning(
-                "OpenAI image model %s is unavailable; falling back to %s.",
-                model,
-                OPENAI_IMAGE_FALLBACK_MODEL,
-            )
-            payload["model"] = OPENAI_IMAGE_FALLBACK_MODEL
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
             response = await client.post(
                 f"{settings.openai_base_url.rstrip('/')}/images/generations",
                 headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
                 json=payload,
             )
-            model = OPENAI_IMAGE_FALLBACK_MODEL
+            if _should_fallback_openai_image_model(response, model):
+                logger.warning(
+                    "OpenAI image model %s is unavailable; falling back to %s.",
+                    model,
+                    OPENAI_IMAGE_FALLBACK_MODEL,
+                )
+                payload["model"] = OPENAI_IMAGE_FALLBACK_MODEL
+                response = await client.post(
+                    f"{settings.openai_base_url.rstrip('/')}/images/generations",
+                    headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
+                    json=payload,
+                )
+                model = OPENAI_IMAGE_FALLBACK_MODEL
+    except httpx.TimeoutException:
+        raise provider_timeout("openai")
+    except httpx.RequestError as exc:
+        raise provider_unavailable("openai", exc)
     if response.status_code >= 400:
-        raise provider_request_failed("openai", response.text)
+        raise provider_request_failed("openai", response.text, response.status_code)
     data = response.json()
-    image = data["data"][0]
+    images = data.get("data") or []
+    if not images:
+        raise provider_request_failed("openai", "Missing image data in provider response")
+    image = images[0]
     output = image.get("url")
     if not output and image.get("b64_json"):
         output = f"data:image/png;base64,{image['b64_json']}"
@@ -72,29 +80,34 @@ async def _flux_image(prompt: str, model: str, size: str) -> ProviderResult:
     endpoint = _flux_endpoint(model)
     payload = {"prompt": prompt, "width": width, "height": height}
     headers = {"accept": "application/json", "x-key": settings.flux_api_key, "Content-Type": "application/json"}
-    async with httpx.AsyncClient(timeout=120) as client:
-        submit = await client.post(endpoint, headers=headers, json=payload)
-        if submit.status_code >= 400:
-            raise provider_request_failed("flux", submit.text)
-        submitted = submit.json()
-        polling_url = submitted.get("polling_url")
-        request_id = submitted.get("id")
-        if not polling_url:
-            raise HTTPException(status_code=502, detail={"provider": "flux", "error": "Missing polling_url", "response": submitted})
+    try:
+        async with httpx.AsyncClient(timeout=120) as client:
+            submit = await client.post(endpoint, headers=headers, json=payload)
+            if submit.status_code >= 400:
+                raise provider_request_failed("flux", submit.text, submit.status_code)
+            submitted = submit.json()
+            polling_url = submitted.get("polling_url")
+            request_id = submitted.get("id")
+            if not polling_url:
+                raise HTTPException(status_code=502, detail={"provider": "FLUX", "code": "provider_error", "message": "FLUX response did not include a polling URL."})
 
-        deadline = time.monotonic() + 90
-        while time.monotonic() < deadline:
-            poll = await client.get(polling_url, headers={"accept": "application/json", "x-key": settings.flux_api_key})
-            if poll.status_code >= 400:
-                raise provider_request_failed("flux", poll.text)
-            data = poll.json()
-            status = data.get("status")
-            if status == "Ready":
-                output = (data.get("result") or {}).get("sample")
-                return ProviderResult(provider="flux", model=model, output_url=output, usage={"request_id": request_id}, status="completed")
-            if status in {"Error", "Failed"}:
-                raise provider_request_failed("flux", str(data))
-            await _sleep(0.75)
+            deadline = time.monotonic() + 90
+            while time.monotonic() < deadline:
+                poll = await client.get(polling_url, headers={"accept": "application/json", "x-key": settings.flux_api_key})
+                if poll.status_code >= 400:
+                    raise provider_request_failed("flux", poll.text, poll.status_code)
+                data = poll.json()
+                status = data.get("status")
+                if status == "Ready":
+                    output = (data.get("result") or {}).get("sample")
+                    return ProviderResult(provider="flux", model=model, output_url=output, usage={"request_id": request_id}, status="completed")
+                if status in {"Error", "Failed"}:
+                    raise provider_request_failed("flux", str(data))
+                await _sleep(0.75)
+    except httpx.TimeoutException:
+        raise provider_timeout("flux")
+    except httpx.RequestError as exc:
+        raise provider_unavailable("flux", exc)
 
     return ProviderResult(provider="flux", model=model, status="queued", usage={"request_id": request_id}, output_url=None)
 

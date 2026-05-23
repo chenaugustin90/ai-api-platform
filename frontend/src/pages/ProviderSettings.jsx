@@ -6,6 +6,7 @@ import { GlassButton, GlassCard } from '../components/ui'
 export default function ProviderSettings() {
   const [data, setData] = useState(null)
   const [error, setError] = useState('')
+  const [health, setHealth] = useState(null)
   const [testing, setTesting] = useState('')
   const [refreshing, setRefreshing] = useState(false)
   const [testResults, setTestResults] = useState({})
@@ -14,7 +15,12 @@ export default function ProviderSettings() {
     setError('')
     setRefreshing(true)
     try {
-      setData(await api('/api/providers/status'))
+      const [status, healthStatus] = await Promise.all([
+        api('/api/providers/status'),
+        api('/health/providers').catch(() => null)
+      ])
+      setData(status)
+      setHealth(healthStatus)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -75,7 +81,7 @@ export default function ProviderSettings() {
           <div className="provider-overview-grid">
             <ProviderRuntimeMetric label="Fallback mode" value={data.allow_mock_providers ? 'Enabled' : 'Disabled'} />
             <ProviderRuntimeMetric label="Image model" value={data.openai_image_model} />
-            <ProviderRuntimeMetric label="Connected" value={`${data.providers.filter((provider) => provider.configured).length}/${data.providers.length}`} />
+            <ProviderRuntimeMetric label="Connected" value={health?.summary ? `${health.summary.connected}/${health.summary.total}` : `${data.providers.filter((provider) => provider.configured).length}/${data.providers.length}`} />
           </div>
         </GlassCard>
       )}
@@ -106,7 +112,7 @@ function ProviderRuntimeMetric({ label, value }) {
 
 function ProviderCard({ provider, testing, result, onTest }) {
   const StatusIcon = provider.configured ? CheckCircle2 : XCircle
-  const statusLabel = provider.configured ? 'connected' : 'missing key'
+  const statusLabel = provider.configured ? 'connected' : 'disconnected'
 
   return (
     <GlassCard as="article" className="provider-card p-5">
@@ -125,12 +131,16 @@ function ProviderCard({ provider, testing, result, onTest }) {
           {statusLabel}
         </span>
       </div>
+      {provider.message && <p className="provider-diagnostic-message">{provider.message}</p>}
 
       <div className="provider-section">
         <p className="provider-section-title">
           <Activity className="h-3.5 w-3.5" />
           Model information
         </p>
+        <div className="provider-capabilities">
+          {(provider.capabilities || []).map((capability) => <span key={capability}>{capability}</span>)}
+        </div>
         <div className="provider-models">
           {provider.models.map((model) => <span key={model}>{model}</span>)}
         </div>

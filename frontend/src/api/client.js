@@ -88,6 +88,7 @@ function formatApiError(data) {
   const detail = data?.detail || data
   if (typeof detail === 'string') return detail
   if (Array.isArray(detail)) return detail.map((item) => item.msg || item.message || 'Invalid request').join(', ')
+  if (detail?.provider && detail?.message) return detail.message
   if (detail?.provider && detail?.error) return `${detail.provider} request failed. Check provider configuration, model access, and quota.`
   if (detail?.message) return detail.message
   return 'Request failed. Please check provider configuration, model access, and credits.'
