@@ -6432,6 +6432,251 @@ body.theme-light .empty-cta {
     inset 0 1px 0 rgba(255, 255, 255, 0.42);
 }
 
+/* Final Liquid Glass polish: less blur, clearer refraction, stronger edges. */
+.app-layout {
+  gap: 1rem !important;
+}
+
+.lg-card,
+.glass-panel,
+.panel {
+  border-color: rgba(216, 250, 255, 0.2);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.045) 44%, rgba(0, 229, 255, 0.045)),
+    radial-gradient(18rem 12rem at 14% 0%, rgba(255, 255, 255, 0.13), transparent 64%),
+    rgba(10, 16, 31, 0.62);
+  box-shadow:
+    0 22px 64px rgba(0, 0, 0, 0.36),
+    0 0 26px rgba(0, 229, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.34),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08),
+    inset 0 -18px 38px rgba(3, 7, 18, 0.18);
+  backdrop-filter: blur(18px) saturate(170%) contrast(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(170%) contrast(1.08);
+}
+
+.lg-card::before,
+.glass-panel::before,
+.panel::before {
+  inset: -24%;
+  background:
+    linear-gradient(118deg, rgba(255, 255, 255, 0.28), transparent 26%, rgba(255, 255, 255, 0.08) 48%, rgba(0, 229, 255, 0.12) 74%, transparent 92%),
+    radial-gradient(circle at 15% 4%, rgba(255, 255, 255, 0.26), transparent 11rem);
+  opacity: 0.58;
+}
+
+.lg-card:hover,
+.glass-panel:hover,
+.panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(216, 250, 255, 0.36);
+  box-shadow:
+    0 28px 76px rgba(0, 0, 0, 0.42),
+    0 0 36px rgba(0, 229, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.vision-sidebar {
+  box-shadow:
+    0 22px 62px rgba(0, 0, 0, 0.34),
+    0 8px 28px rgba(6, 182, 212, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(22px) saturate(172%) contrast(1.08);
+  -webkit-backdrop-filter: blur(22px) saturate(172%) contrast(1.08);
+}
+
+.lg-control,
+.field,
+.studio-prompt,
+.playground-editor,
+.lg-select-trigger {
+  color: #ffffff;
+  backdrop-filter: blur(14px) saturate(160%) contrast(1.06);
+  -webkit-backdrop-filter: blur(14px) saturate(160%) contrast(1.06);
+}
+
+body.theme-light {
+  color: #141416;
+}
+
+body.theme-light .title-gradient,
+body.theme-light .landing-hero h1,
+body.theme-light .landing-section-heading h2,
+body.theme-light .landing-pricing-preview h2,
+body.theme-light .landing-developer-preview h2,
+body.theme-light .landing-cta h2 {
+  background: linear-gradient(135deg, #141416 6%, #0057b8 50%, #5f3dc4 94%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body.theme-light .text-white,
+body.theme-light h1,
+body.theme-light h2,
+body.theme-light h3,
+body.theme-light strong,
+body.theme-light .vision-nav-label,
+body.theme-light .dashboard-metric-number,
+body.theme-light .lg-select-trigger,
+body.theme-light .lg-select-option,
+body.theme-light .snippet-copy {
+  color: #141416;
+}
+
+body.theme-light .muted,
+body.theme-light .text-\[\#A1A1AA\],
+body.theme-light .dashboard-metric-label,
+body.theme-light .provider-setup-list,
+body.theme-light .provider-test-result p,
+body.theme-light .playground-editor-label,
+body.theme-light .usage-bar-value,
+body.theme-light .usage-bar-column small,
+body.theme-light .credits-trend-labels span,
+body.theme-light .lg-control::placeholder {
+  color: #51545c;
+}
+
+body.theme-light .lg-card,
+body.theme-light .glass-panel,
+body.theme-light .panel,
+body.theme-light .landing-nav,
+body.theme-light .landing-page .lg-card,
+body.theme-light .playground-console,
+body.theme-light .dashboard-generator,
+body.theme-light .provider-overview,
+body.theme-light .provider-card,
+body.theme-light .billing-status-card,
+body.theme-light .account-profile-card,
+body.theme-light .account-billing-card,
+body.theme-light .account-keys-panel,
+body.theme-light .prompt-history,
+body.theme-light .empty-state {
+  border-color: rgba(255, 255, 255, 0.92);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.36) 52%, rgba(216, 243, 255, 0.22)),
+    rgba(255, 255, 255, 0.46);
+  box-shadow:
+    0 12px 38px rgba(31, 38, 135, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.62),
+    inset 0 -18px 34px rgba(77, 163, 255, 0.035);
+  backdrop-filter: blur(18px) saturate(175%) contrast(1.08);
+  -webkit-backdrop-filter: blur(18px) saturate(175%) contrast(1.08);
+}
+
+body.theme-light .lg-card::before,
+body.theme-light .glass-panel::before,
+body.theme-light .panel::before,
+body.theme-light .prompt-history::before,
+body.theme-light .empty-state::before {
+  background:
+    linear-gradient(118deg, rgba(255, 255, 255, 0.92), transparent 24%, rgba(255, 255, 255, 0.34) 48%, transparent 72%),
+    radial-gradient(12rem 7rem at 15% 0%, rgba(255, 255, 255, 0.8), transparent 72%);
+  opacity: 0.7;
+}
+
+body.theme-light .lg-card:hover,
+body.theme-light .glass-panel:hover,
+body.theme-light .panel:hover {
+  transform: translateY(-2px);
+  border-color: rgba(255, 255, 255, 1);
+  box-shadow:
+    0 18px 46px rgba(31, 38, 135, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.72);
+}
+
+body.theme-light .vision-sidebar {
+  border-color: rgba(255, 255, 255, 0.94);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.34)),
+    rgba(255, 255, 255, 0.38);
+  box-shadow:
+    0 10px 34px rgba(31, 38, 135, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(20px) saturate(175%) contrast(1.08);
+  -webkit-backdrop-filter: blur(20px) saturate(175%) contrast(1.08);
+}
+
+body.theme-light .vision-nav-item {
+  color: #282a31;
+  background: rgba(255, 255, 255, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 3px 12px rgba(31, 38, 135, 0.035);
+  backdrop-filter: blur(12px) saturate(165%);
+  -webkit-backdrop-filter: blur(12px) saturate(165%);
+}
+
+body.theme-light .vision-nav-item.is-active {
+  color: #062f82;
+  background:
+    linear-gradient(135deg, rgba(77, 163, 255, 0.26), rgba(139, 92, 246, 0.18)),
+    rgba(255, 255, 255, 0.62);
+  box-shadow:
+    0 0 0 1px rgba(77, 163, 255, 0.18),
+    0 8px 24px rgba(77, 163, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+body.theme-light .lg-control,
+body.theme-light .field,
+body.theme-light .studio-prompt,
+body.theme-light .playground-editor,
+body.theme-light .lg-select-trigger {
+  color: #141416;
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 5px 18px rgba(31, 38, 135, 0.045);
+  backdrop-filter: blur(12px) saturate(170%) contrast(1.06);
+  -webkit-backdrop-filter: blur(12px) saturate(170%) contrast(1.06);
+}
+
+body.theme-light .example-chip {
+  color: #0b3d70;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.62), rgba(216, 243, 255, 0.42)),
+    rgba(255, 255, 255, 0.32);
+  box-shadow:
+    0 6px 18px rgba(77, 163, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(12px) saturate(175%);
+  -webkit-backdrop-filter: blur(12px) saturate(175%);
+}
+
+body.theme-light .auth-provider-chip {
+  color: #1f2937;
+  border-color: rgba(255, 255, 255, 0.9);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.64), rgba(255, 255, 255, 0.34) 54%, rgba(216, 243, 255, 0.24)),
+    rgba(255, 255, 255, 0.36);
+  box-shadow:
+    0 8px 24px rgba(31, 38, 135, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.98),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(12px) saturate(175%) contrast(1.06);
+  -webkit-backdrop-filter: blur(12px) saturate(175%) contrast(1.06);
+}
+
+body.theme-light .dashboard-insights-grid .lg-card,
+body.theme-light .dashboard-metric,
+body.theme-light .account-stat-card,
+body.theme-light .provider-runtime-metric,
+body.theme-light .playground-response,
+body.theme-light .docs-code-block,
+body.theme-light .docs-code-tabs {
+  border-color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.46);
+  box-shadow:
+    0 8px 28px rgba(31, 38, 135, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+}
+
 @keyframes light-blob-drift {
   from {
     transform: translate3d(-1.5%, -1%, 0) scale(1);
