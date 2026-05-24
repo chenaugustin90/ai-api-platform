@@ -21,6 +21,7 @@ import ProviderSettings from './pages/ProviderSettings'
 import PromptLibrary from './pages/PromptLibrary'
 import Pricing from './pages/Pricing'
 import Register from './pages/Register'
+import Upgrade from './pages/Upgrade'
 import Usage from './pages/Usage'
 import VideoGeneration from './pages/VideoGeneration'
 
@@ -43,6 +44,7 @@ const router = createBrowserRouter([
       { path: '/dashboard', element: <Dashboard /> },
       { path: '/api-keys', element: <ApiKeys /> },
       { path: '/pricing', element: <Pricing /> },
+      { path: '/upgrade', element: <Upgrade /> },
       { path: '/playground', element: <Playground /> },
       { path: '/prompt-library', element: <PromptLibrary /> },
       { path: '/history', element: <History /> },

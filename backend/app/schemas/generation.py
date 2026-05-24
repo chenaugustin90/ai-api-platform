@@ -22,6 +22,7 @@ class TextGenerationResponse(BaseModel):
     model: str
     text: str
     usage: dict
+    credits_used: int
 
 
 class ImageGenerationRequest(BaseModel):
@@ -47,6 +48,7 @@ class MediaGenerationResponse(BaseModel):
     status: str
     output_url: str | None
     image_urls: list[str] = Field(default_factory=list)
+    credits_used: int
 
 
 class GenerationResponse(BaseModel):

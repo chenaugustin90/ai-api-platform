@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class UsageEventResponse(BaseModel):
@@ -25,4 +25,5 @@ class UsageSummary(BaseModel):
     total_tokens: int
     total_credits_used: int
     by_modality: dict[str, int]
-
+    by_provider: dict[str, int] = Field(default_factory=dict)
+    by_model: dict[str, int] = Field(default_factory=dict)

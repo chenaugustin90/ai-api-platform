@@ -48,6 +48,10 @@ export default function Usage() {
         <Stat label="Total events" value={summary.total_events} />
         <Stat label="Total tokens" value={summary.total_tokens} />
       </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <UsageBreakdown title="Credits by provider" items={summary.by_provider} />
+        <UsageBreakdown title="Credits by model" items={summary.by_model} />
+      </div>
       <GlassCard as="section" className="p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-white">API keys</h2>
@@ -82,6 +86,27 @@ export default function Usage() {
         </div>
       </GlassCard>
     </div>
+  )
+}
+
+function UsageBreakdown({ title, items = {} }) {
+  const rows = Object.entries(items).sort((a, b) => Number(b[1]) - Number(a[1])).slice(0, 6)
+  return (
+    <GlassCard className="usage-breakdown-card p-5">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-lg font-semibold text-white">{title}</h2>
+        <span className="lg-pill text-xs">{rows.length} tracked</span>
+      </div>
+      <div className="space-y-3">
+        {rows.map(([label, value]) => (
+          <div key={label} className="usage-breakdown-row">
+            <span>{label}</span>
+            <strong>{Number(value).toLocaleString()} credits</strong>
+          </div>
+        ))}
+        {rows.length === 0 && <p className="muted text-sm">No usage recorded yet.</p>}
+      </div>
+    </GlassCard>
   )
 }
 

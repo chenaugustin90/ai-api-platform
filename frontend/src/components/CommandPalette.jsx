@@ -34,6 +34,7 @@ export default function CommandPalette() {
     { label: 'Open account', hint: 'Profile, billing, usage, and keys', icon: UserCircle, run: () => navigate('/account') },
     { label: 'Open API keys', hint: 'Manage developer access keys', icon: KeyRound, run: () => navigate('/api-keys') },
     { label: 'Open usage', hint: 'View usage timeline and keys', icon: WalletCards, run: () => navigate('/usage') },
+    { label: 'Open upgrade', hint: 'Review credit balance and upgrade placeholder', icon: Sparkles, run: () => navigate('/upgrade') },
     { label: 'Open dashboard', hint: 'Return to command center', icon: LayoutDashboard, run: () => navigate('/dashboard') },
     { label: 'Open AI providers', hint: 'Check provider setup and connection tests', icon: Settings, run: () => navigate('/settings/providers') },
     {

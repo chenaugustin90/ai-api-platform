@@ -122,7 +122,7 @@ export default function Playground() {
         })
       }
       setResponseTime(Math.round(performance.now() - started))
-      setCreditsUsed(config.credits)
+      setCreditsUsed(result.credits_used ?? config.credits)
     } catch (err) {
       setError(err.message)
       setResponseTime(Math.round(performance.now() - started))

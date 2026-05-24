@@ -150,7 +150,7 @@ export default function Dashboard() {
         text: result.text,
         output_url: result.output_url,
         status: result.status || 'completed',
-        credits: config.credits,
+        credits: result.credits_used || config.credits,
         elapsed
       }
       setGenerationProgress(100)

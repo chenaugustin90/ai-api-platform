@@ -42,13 +42,18 @@ def record_usage(
 def usage_summary(db: Session, user: User) -> dict:
     rows = db.query(UsageEvent).filter(UsageEvent.user_id == user.id).all()
     by_modality: dict[str, int] = {}
+    by_provider: dict[str, int] = {}
+    by_model: dict[str, int] = {}
     for row in rows:
         by_modality[row.modality] = by_modality.get(row.modality, 0) + row.credits_used
+        by_provider[row.provider] = by_provider.get(row.provider, 0) + row.credits_used
+        by_model[row.model] = by_model.get(row.model, 0) + row.credits_used
     return {
         "credits_remaining": user.credits_remaining,
         "total_events": len(rows),
         "total_tokens": sum(row.total_tokens for row in rows),
         "total_credits_used": sum(row.credits_used for row in rows),
         "by_modality": by_modality,
+        "by_provider": by_provider,
+        "by_model": by_model,
     }
-
