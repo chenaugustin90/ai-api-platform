@@ -29,3 +29,4 @@ class User(Base):
     usage_events = relationship("UsageEvent", back_populates="user", cascade="all, delete-orphan")
     generations = relationship("Generation", back_populates="user", cascade="all, delete-orphan")
     shares = relationship("Share", back_populates="user", cascade="all, delete-orphan")
+    billing_records = relationship("BillingRecord", back_populates="user", cascade="all, delete-orphan")

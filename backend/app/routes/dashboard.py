@@ -44,6 +44,7 @@ def dashboard(user: User = Depends(get_current_user), db: Session = Depends(get_
         "stripe_customer_id": user.stripe_customer_id,
         "stripe_subscription_id": user.stripe_subscription_id,
         "subscription_current_period_end": user.subscription_current_period_end,
+        "next_billing_date": user.subscription_current_period_end,
         "customer_portal_available": bool(settings.stripe_secret_key and user.stripe_customer_id),
     }
     return {

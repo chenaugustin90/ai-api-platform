@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     stripe_webhook_secret: str | None = None
     stripe_price_starter: str | None = None
     stripe_price_pro: str | None = None
+    stripe_price_enterprise: str | None = None
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

@@ -5891,6 +5891,11 @@ body.theme-light .upgrade-metric-row strong {
   min-height: 30rem;
 }
 
+.credit-pack-card,
+.payment-method-strip {
+  min-height: auto;
+}
+
 .pricing-plan-card.is-featured {
   border-color: rgba(0, 229, 255, 0.28);
 }
@@ -5916,6 +5921,45 @@ body.theme-light .upgrade-metric-row strong {
   font-size: 0.75rem;
   font-weight: 850;
   background: rgba(255, 255, 255, 0.06);
+}
+
+.payment-method-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+}
+
+.payment-method-list span,
+.payment-result-stats span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 999px;
+  padding: 0.5rem 0.7rem;
+  color: #dffbff;
+  font-size: 0.78rem;
+  font-weight: 850;
+  background: rgba(0, 229, 255, 0.075);
+}
+
+.payment-result-page {
+  display: grid;
+  min-height: min(70vh, 720px);
+  place-items: center;
+}
+
+.payment-result-card {
+  width: min(720px, 100%);
+  text-align: center;
+}
+
+.payment-result-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin-top: 1.35rem;
 }
 
 .account-grid,
@@ -6038,6 +6082,61 @@ body.theme-light .upgrade-metric-row strong {
   font-size: 0.78rem;
   font-weight: 850;
   background: rgba(0, 229, 255, 0.08);
+}
+
+.billing-history-panel {
+  overflow: hidden;
+}
+
+.billing-history-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.billing-history-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 22px;
+  padding: 0.9rem;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.billing-history-icon {
+  display: grid;
+  width: 2.4rem;
+  height: 2.4rem;
+  place-items: center;
+  border: 1px solid rgba(0, 229, 255, 0.18);
+  border-radius: 999px;
+  color: #00e5ff;
+  background: rgba(0, 229, 255, 0.08);
+}
+
+.billing-history-row h3 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.billing-history-row p,
+.billing-history-amount span {
+  margin-top: 0.25rem;
+  color: #a1a1aa;
+  font-size: 0.78rem;
+}
+
+.billing-history-amount {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+}
+
+.billing-history-amount strong {
+  color: #ffffff;
 }
 
 .account-meter {
@@ -6243,6 +6342,8 @@ body.theme-light .account-profile-copy h2,
 body.theme-light .account-billing-card h2,
 body.theme-light .account-key-row h3,
 body.theme-light .account-stat-card strong,
+body.theme-light .billing-history-row h3,
+body.theme-light .billing-history-amount strong,
 body.theme-light .provider-runtime-metric strong,
 body.theme-light .provider-test-result strong,
 body.theme-light .provider-test-result span,
@@ -6272,6 +6373,8 @@ body.theme-light .account-profile-copy p:not(.eyebrow),
 body.theme-light .account-billing-card p,
 body.theme-light .account-key-meta,
 body.theme-light .account-stat-card p,
+body.theme-light .billing-history-row p,
+body.theme-light .billing-history-amount span,
 body.theme-light .dashboard-metric-label,
 body.theme-light .provider-runtime-metric span,
 body.theme-light .provider-setup-list,
@@ -6584,6 +6687,7 @@ body.theme-light .dashboard-generator,
 body.theme-light .provider-overview,
 body.theme-light .provider-card,
 body.theme-light .billing-status-card,
+body.theme-light .billing-history-panel,
 body.theme-light .account-profile-card,
 body.theme-light .account-billing-card,
 body.theme-light .account-keys-panel {
@@ -7020,6 +7124,7 @@ body.theme-light .dashboard-generator,
 body.theme-light .provider-overview,
 body.theme-light .provider-card,
 body.theme-light .billing-status-card,
+body.theme-light .billing-history-panel,
 body.theme-light .account-profile-card,
 body.theme-light .account-billing-card,
 body.theme-light .account-keys-panel,
@@ -7205,6 +7310,7 @@ body.theme-light .dashboard-generator,
 body.theme-light .provider-overview,
 body.theme-light .provider-card,
 body.theme-light .billing-status-card,
+body.theme-light .billing-history-panel,
 body.theme-light .account-profile-card,
 body.theme-light .account-billing-card,
 body.theme-light .account-keys-panel,

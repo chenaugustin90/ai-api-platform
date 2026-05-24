@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel
 
 
 class CheckoutRequest(BaseModel):
-    tier: str
+    tier: str | None = None
+    purchase_type: Literal["subscription", "credits"] = "subscription"
+    pack_id: str | None = None
 
 
 class CheckoutResponse(BaseModel):
@@ -26,4 +29,20 @@ class BillingStatus(BaseModel):
     stripe_customer_id: str | None = None
     stripe_subscription_id: str | None = None
     subscription_current_period_end: datetime | None = None
+    next_billing_date: datetime | None = None
     customer_portal_available: bool = False
+
+
+class BillingRecordResponse(BaseModel):
+    id: int
+    purchase_type: str
+    mode: str
+    tier: str | None = None
+    credits: int
+    amount_cents: int
+    currency: str
+    status: str
+    description: str | None = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}

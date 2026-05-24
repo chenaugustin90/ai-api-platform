@@ -20,6 +20,8 @@ import Playground from './pages/Playground'
 import ProviderSettings from './pages/ProviderSettings'
 import PromptLibrary from './pages/PromptLibrary'
 import Pricing from './pages/Pricing'
+import PaymentCancel from './pages/PaymentCancel'
+import PaymentSuccess from './pages/PaymentSuccess'
 import Register from './pages/Register'
 import SharedPreview from './pages/SharedPreview'
 import Upgrade from './pages/Upgrade'
@@ -46,6 +48,8 @@ const router = createBrowserRouter([
       { path: '/dashboard', element: <Dashboard /> },
       { path: '/api-keys', element: <ApiKeys /> },
       { path: '/pricing', element: <Pricing /> },
+      { path: '/billing/success', element: <PaymentSuccess /> },
+      { path: '/billing/cancel', element: <PaymentCancel /> },
       { path: '/upgrade', element: <Upgrade /> },
       { path: '/playground', element: <Playground /> },
       { path: '/prompt-library', element: <PromptLibrary /> },

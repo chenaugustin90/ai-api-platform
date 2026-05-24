@@ -48,3 +48,5 @@ services:
         sync: false
       - key: STRIPE_PRICE_PRO
         sync: false
+      - key: STRIPE_PRICE_ENTERPRISE
+        sync: false

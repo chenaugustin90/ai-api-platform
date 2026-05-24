@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, Camera, Check, Copy, CreditCard, KeyRound, Plus, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
+import { AlertTriangle, BarChart3, Camera, Check, Copy, CreditCard, ExternalLink, KeyRound, Plus, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
 import { GlassButton, GlassCard, GlassInput } from '../components/ui'
@@ -13,6 +13,7 @@ export default function Account() {
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '')
   const [dashboard, setDashboard] = useState(null)
   const [usage, setUsage] = useState(null)
+  const [billingHistory, setBillingHistory] = useState([])
   const [keys, setKeys] = useState([])
   const [keyName, setKeyName] = useState('')
   const [newKey, setNewKey] = useState(null)
@@ -20,6 +21,7 @@ export default function Account() {
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [revokingId, setRevokingId] = useState(null)
+  const [openingPortal, setOpeningPortal] = useState(false)
 
   const activeKeys = useMemo(() => keys.filter((key) => key.is_active).length, [keys])
   const billing = dashboard?.billing || {
@@ -35,14 +37,16 @@ export default function Account() {
   async function loadAccount() {
     setLoading(true)
     try {
-      const [dashboardData, usageData, keyData] = await Promise.all([
+      const [dashboardData, usageData, keyData, billingHistoryData] = await Promise.all([
         api('/api/dashboard'),
         api('/api/usage/summary'),
-        api('/api/api-keys')
+        api('/api/api-keys'),
+        api('/api/billing/history').catch(() => [])
       ])
       setDashboard(dashboardData)
       setUsage(usageData)
       setKeys(keyData)
+      setBillingHistory(billingHistoryData)
     } catch (error) {
       toast.error(error.message)
     } finally {
@@ -107,6 +111,18 @@ export default function Account() {
     }
   }
 
+  async function openCustomerPortal() {
+    setOpeningPortal(true)
+    try {
+      const response = await api('/api/billing/portal', { method: 'POST' })
+      window.location.href = response.portal_url
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setOpeningPortal(false)
+    }
+  }
+
   if (loading) return <p className="muted animate-pulse text-sm">Loading account...</p>
 
   return (
@@ -154,9 +170,16 @@ export default function Account() {
           <div className="account-meter">
             <span style={{ width: `${Math.min(100, Math.max(6, ((billing.credits_remaining || 0) / 100000) * 100))}%` }} />
           </div>
-          <GlassButton as="a" href="/pricing" variant="secondary" className="mt-4">
-            Manage plan
-          </GlassButton>
+          {billing.next_billing_date && <p className="mt-3 text-sm">Next billing date {formatDate(billing.next_billing_date)}</p>}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <GlassButton as="a" href="/pricing" variant="secondary">Manage plan</GlassButton>
+            {billing.customer_portal_available && (
+              <GlassButton type="button" variant="secondary" onClick={openCustomerPortal} disabled={openingPortal}>
+                <ExternalLink className="h-4 w-4" />
+                {openingPortal ? 'Opening' : 'Customer portal'}
+              </GlassButton>
+            )}
+          </div>
         </GlassCard>
       </div>
 
@@ -165,6 +188,32 @@ export default function Account() {
         <AccountStat icon={SparkMini} label="Credits used" value={usage?.total_credits_used || 0} />
         <AccountStat icon={KeyRound} label="Tokens" value={usage?.total_tokens || 0} />
       </div>
+
+      <GlassCard as="section" className="billing-history-panel p-5">
+        <div className="mb-4 flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="eyebrow mb-1">Billing History</p>
+            <h2 className="text-xl font-semibold text-white">Payments and credits</h2>
+          </div>
+          <span className="account-credit-badge">{billingHistory.length} records</span>
+        </div>
+        <div className="billing-history-list">
+          {billingHistory.map((record) => (
+            <article key={record.id} className="billing-history-row">
+              <div className="billing-history-icon"><CreditCard className="h-4 w-4" /></div>
+              <div className="min-w-0 flex-1">
+                <h3>{record.description || formatPlan(record.tier || record.purchase_type)}</h3>
+                <p>{formatDate(record.created_at)} / {record.status} / {record.mode}</p>
+              </div>
+              <div className="billing-history-amount">
+                <strong>{formatCurrency(record.amount_cents, record.currency)}</strong>
+                <span>+{Number(record.credits || 0).toLocaleString()} credits</span>
+              </div>
+            </article>
+          ))}
+          {billingHistory.length === 0 && <div className="api-key-empty">No billing records yet.</div>}
+        </div>
+      </GlassCard>
 
       <GlassCard as="section" className="account-keys-panel p-5">
         <div className="mb-4 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -253,4 +302,11 @@ function formatDate(value) {
   const date = new Date(value)
   if (!Number.isFinite(date.getTime())) return 'Unknown'
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function formatCurrency(amountCents, currency = 'usd') {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: String(currency || 'usd').toUpperCase()
+  }).format((Number(amountCents) || 0) / 100)
 }
