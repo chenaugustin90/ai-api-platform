@@ -1,6 +1,6 @@
 import { Activity, CheckCircle2, ExternalLink, FlaskConical, KeyRound, RefreshCw, Settings, XCircle } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { api } from '../api/client'
+import { API_URL, api } from '../api/client'
 import { GlassButton, GlassCard } from '../components/ui'
 
 export default function ProviderSettings() {
@@ -31,6 +31,15 @@ export default function ProviderSettings() {
   useEffect(() => {
     loadStatus()
   }, [])
+
+  const healthProviders = Object.fromEntries((health?.providers || []).map((provider) => [provider.id, provider]))
+  const providers = data?.providers.map((provider) => ({
+    ...provider,
+    ...(healthProviders[provider.id] || {})
+  })) || []
+  const connectedCount = health?.summary
+    ? `${health.summary.connected}/${health.summary.total}`
+    : `${providers.filter((provider) => provider.configured).length}/${providers.length}`
 
   async function testProvider(provider) {
     setTesting(provider.id)
@@ -82,13 +91,14 @@ export default function ProviderSettings() {
             <ProviderRuntimeMetric label="Fallback mode" value={data.allow_mock_providers ? 'Enabled' : 'Disabled'} />
             {health && <ProviderRuntimeMetric label="Effective mode" value={health.fallback_mode ? 'Mock fallback' : 'Real providers'} />}
             <ProviderRuntimeMetric label="Image model" value={data.openai_image_model} />
-            <ProviderRuntimeMetric label="Connected" value={health?.summary ? `${health.summary.connected}/${health.summary.total}` : `${data.providers.filter((provider) => provider.configured).length}/${data.providers.length}`} />
+            <ProviderRuntimeMetric label="Connected" value={connectedCount} />
+            <ProviderRuntimeMetric label="Backend URL" value={API_URL || 'Missing BACKEND_URL'} />
           </div>
         </GlassCard>
       )}
 
       <div className="provider-settings-grid">
-        {data?.providers.map((provider) => (
+        {providers.map((provider) => (
           <ProviderCard
             key={provider.id}
             provider={provider}
