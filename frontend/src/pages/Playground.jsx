@@ -2,6 +2,7 @@ import { Check, Clock3, Code2, Copy, Play, Sparkles, TerminalSquare, Zap } from 
 import { useEffect, useMemo, useState } from 'react'
 import { API_URL, api, apiKeyRequest, getToken } from '../api/client'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
+import { saveTextGenerationHistory } from '../utils/generationHistory'
 
 const ENDPOINTS = {
   text: {
@@ -110,6 +111,16 @@ export default function Playground() {
         result = await sendChatModeRequest(config.path, payload)
       }
       setResponse(result)
+      if (endpoint === 'text') {
+        saveTextGenerationHistory({
+          prompt: payload.prompt || '',
+          response: result.text || '',
+          text: result.text || '',
+          provider: result.provider || payload.provider,
+          model: result.model || payload.model,
+          created_at: new Date().toISOString()
+        })
+      }
       setResponseTime(Math.round(performance.now() - started))
       setCreditsUsed(config.credits)
     } catch (err) {

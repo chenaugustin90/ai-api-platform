@@ -12,6 +12,7 @@ import Account from './pages/Account'
 import ApiKeys from './pages/ApiKeys'
 import Dashboard from './pages/Dashboard'
 import Docs from './pages/Docs'
+import History from './pages/History'
 import ImageGeneration from './pages/ImageGeneration'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
@@ -44,6 +45,7 @@ const router = createBrowserRouter([
       { path: '/pricing', element: <Pricing /> },
       { path: '/playground', element: <Playground /> },
       { path: '/prompt-library', element: <PromptLibrary /> },
+      { path: '/history', element: <History /> },
       { path: '/account', element: <Account /> },
       { path: '/docs', element: <Docs /> },
       { path: '/images', element: <ImageGeneration /> },

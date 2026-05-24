@@ -5,11 +5,9 @@ import AiLoading from '../components/AiLoading'
 import EmptyState from '../components/EmptyState'
 import PromptHistory, { saveRecentPrompt } from '../components/PromptHistory'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
+import { IMAGE_HISTORY_LIMIT, deleteImageHistory, loadImageHistory, saveImageHistory } from '../utils/generationHistory'
 
 const IMAGE_PROMPT_HISTORY_KEY = 'image_prompt_history'
-const IMAGE_HISTORY_DB = 'ai_api_platform_image_history'
-const IMAGE_HISTORY_KEY = 'image_generation_history'
-const IMAGE_HISTORY_LIMIT = 48
 const IMAGE_EXAMPLES = [
   'A translucent AI data cathedral under blue cinematic light',
   'VisionOS style product render of a glass neural engine',
@@ -122,8 +120,9 @@ export default function ImageGeneration() {
     })
   }
 
-  function deleteImage(id) {
-    updateImages((current) => current.filter((image) => image.id !== id))
+  async function deleteImage(id) {
+    const next = await deleteImageHistory(id)
+    setImages(next)
   }
 
   return (
@@ -265,88 +264,6 @@ function ImageCard({ image, onRegenerate, onDelete }) {
       </div>
     </GlassCard>
   )
-}
-
-async function loadImageHistory() {
-  if (typeof indexedDB !== 'undefined') {
-    try {
-      const db = await openImageHistoryDb()
-      const images = await readAllImages(db)
-      return images.sort(sortNewestFirst).slice(0, IMAGE_HISTORY_LIMIT)
-    } catch {
-      return loadLocalStorageImageHistory()
-    }
-  }
-  return loadLocalStorageImageHistory()
-}
-
-function loadLocalStorageImageHistory() {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(IMAGE_HISTORY_KEY) || '[]')
-    return Array.isArray(parsed) ? parsed.filter((image) => image?.output_url).slice(0, IMAGE_HISTORY_LIMIT) : []
-  } catch {
-    return []
-  }
-}
-
-async function saveImageHistory(images) {
-  const history = images.slice(0, IMAGE_HISTORY_LIMIT)
-  if (typeof indexedDB !== 'undefined') {
-    try {
-      const db = await openImageHistoryDb()
-      await replaceAllImages(db, history)
-      return
-    } catch {
-      saveLocalStorageImageHistory(history)
-      return
-    }
-  }
-  saveLocalStorageImageHistory(history)
-}
-
-function saveLocalStorageImageHistory(images) {
-  try {
-    localStorage.setItem(IMAGE_HISTORY_KEY, JSON.stringify(images.slice(0, IMAGE_HISTORY_LIMIT)))
-  } catch {
-    // Large base64 image history can exceed browser storage. Keep the UI usable.
-  }
-}
-
-function openImageHistoryDb() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(IMAGE_HISTORY_DB, 1)
-    request.onupgradeneeded = () => {
-      const db = request.result
-      if (!db.objectStoreNames.contains('images')) {
-        db.createObjectStore('images', { keyPath: 'id' })
-      }
-    }
-    request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
-  })
-}
-
-function readAllImages(db) {
-  return new Promise((resolve, reject) => {
-    const request = db.transaction('images', 'readonly').objectStore('images').getAll()
-    request.onsuccess = () => resolve(request.result || [])
-    request.onerror = () => reject(request.error)
-  })
-}
-
-function replaceAllImages(db, images) {
-  return new Promise((resolve, reject) => {
-    const transaction = db.transaction('images', 'readwrite')
-    const store = transaction.objectStore('images')
-    store.clear()
-    images.forEach((image) => store.put(image))
-    transaction.oncomplete = () => resolve()
-    transaction.onerror = () => reject(transaction.error)
-  })
-}
-
-function sortNewestFirst(a, b) {
-  return new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
 }
 
 function buildStyledPrompt(prompt, style) {

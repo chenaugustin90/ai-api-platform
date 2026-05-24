@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, CreditCard, FileCode2, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, SquareTerminal, UserCircle, Video, X } from 'lucide-react'
+import { BarChart3, BookOpen, CreditCard, FileCode2, History as HistoryIcon, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, SquareTerminal, UserCircle, Video, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
@@ -13,6 +13,7 @@ const links = [
   ['Images', '/images', Image],
   ['Videos', '/videos', Video],
   ['Prompt Library', '/prompt-library', BookOpen],
+  ['History', '/history', HistoryIcon],
   ['API Keys', '/api-keys', KeyRound],
   ['Pricing', '/pricing', CreditCard],
   ['API Docs', '/docs', FileCode2],

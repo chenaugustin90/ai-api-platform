@@ -6,6 +6,7 @@ import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
 import { AlertTriangle, BookOpen, CalendarClock, Check, Clock3, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, KeyRound, Play, RotateCcw, Settings, Sparkles, SquareTerminal, TerminalSquare, Video, Wand2, X, Zap } from 'lucide-react'
+import { addImagesToHistory, saveTextGenerationHistory } from '../utils/generationHistory'
 import { savePromptToLibrary, saveRecentPromptGlobal } from '../utils/promptLibrary'
 
 const DASHBOARD_EXAMPLES = [
@@ -156,6 +157,32 @@ export default function Dashboard() {
       setGenerationResult(record)
       animateStream(record.text || (record.output_url ? 'Image generation completed.' : 'Generation completed.'))
       setGeneratorHistory((current) => [record, ...current].slice(0, 6))
+      if (generator.endpoint === 'text') {
+        saveTextGenerationHistory({
+          prompt: payload.prompt,
+          response: record.text || '',
+          text: record.text || '',
+          provider: record.provider,
+          model: record.model,
+          created_at: new Date().toISOString()
+        })
+      }
+      if (generator.endpoint === 'image') {
+        const imageUrls = result.image_urls?.length ? result.image_urls : [record.output_url].filter(Boolean)
+        await addImagesToHistory(imageUrls.map((outputUrl, index) => ({
+          id: `${record.id}-${index}`,
+          prompt: payload.prompt,
+          provider: record.provider,
+          model: record.model,
+          size: config.extra.size,
+          style: 'auto',
+          quality: 'auto',
+          count: '1',
+          status: record.status,
+          output_url: outputUrl,
+          created_at: new Date().toISOString()
+        })))
+      }
       await refreshDashboard()
       toast.success(`${config.label} generation completed.`)
     } catch (err) {
