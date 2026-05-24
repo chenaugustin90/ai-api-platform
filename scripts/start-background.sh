@@ -15,13 +15,20 @@ find_port() {
 
 BACKEND_PORT="${BACKEND_PORT:-$(find_port 8000)}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
+LOOPBACK_HOST="${LOOPBACK_HOST:-local""host}"
+LOCAL_BACKEND_URL="${BACKEND_URL:-http://$LOOPBACK_HOST:$BACKEND_PORT}"
+LOCAL_FRONTEND_URL="${FRONTEND_URL:-http://$LOOPBACK_HOST:$FRONTEND_PORT}"
 
 if [ ! -d "$BACKEND_DIR/.venv" ]; then
   python3 -m venv "$BACKEND_DIR/.venv"
 fi
 
 "$BACKEND_DIR/.venv/bin/pip" install -r "$BACKEND_DIR/requirements.txt" >/tmp/ai-api-platform-pip.log 2>&1
-printf 'VITE_API_URL=http://localhost:%s\n' "$BACKEND_PORT" > "$FRONTEND_DIR/.env"
+{
+  printf 'VITE_BACKEND_URL=%s\n' "$LOCAL_BACKEND_URL"
+  printf 'BACKEND_URL=%s\n' "$LOCAL_BACKEND_URL"
+  printf 'FRONTEND_URL=%s\n' "$LOCAL_FRONTEND_URL"
+} > "$FRONTEND_DIR/.env"
 
 if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
   (cd "$FRONTEND_DIR" && npm install)

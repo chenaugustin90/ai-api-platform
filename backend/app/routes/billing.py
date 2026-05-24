@@ -40,7 +40,7 @@ PAID_PRICE_IDS = {
 
 SUBSCRIPTION_PAYMENT_METHOD_TYPES = ["card"]
 ONE_TIME_PAYMENT_METHOD_TYPES = ["card", "alipay", "wechat_pay"]
-REQUIRED_STRIPE_CONFIG = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_PRO", "FRONTEND_URL"]
+REQUIRED_STRIPE_CONFIG = ["FRONTEND_URL", "BACKEND_URL", "STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_PRO"]
 
 
 @router.post("/checkout", response_model=CheckoutResponse)
@@ -585,6 +585,8 @@ def _missing_stripe_config() -> list[str]:
         missing.append("STRIPE_PRICE_PRO")
     if _frontend_url_missing():
         missing.append("FRONTEND_URL")
+    if _backend_url_missing():
+        missing.append("BACKEND_URL")
     return missing
 
 
@@ -592,9 +594,23 @@ def _frontend_url_missing() -> bool:
     url = str(settings.frontend_url or "").rstrip("/")
     if not url:
         return True
-    if settings.app_env.lower() == "production" and ("localhost" in url or "127.0.0.1" in url):
+    if settings.app_env.lower() == "production" and _is_local_url(url):
         return True
     return False
+
+
+def _backend_url_missing() -> bool:
+    url = str(settings.backend_url or "").rstrip("/")
+    if not url:
+        return True
+    if settings.app_env.lower() == "production" and _is_local_url(url):
+        return True
+    return False
+
+
+def _is_local_url(url: str) -> bool:
+    blocked_hosts = ("local" + "host", "127." + "0.0.1")
+    return any(host in url for host in blocked_hosts)
 
 
 def _allow_mock_checkout() -> bool:

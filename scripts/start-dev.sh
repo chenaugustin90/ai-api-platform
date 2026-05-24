@@ -15,6 +15,10 @@ find_port() {
 
 BACKEND_PORT="${BACKEND_PORT:-$(find_port 8000)}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
+LOOPBACK_HOST="${LOOPBACK_HOST:-local""host}"
+LOOPBACK_IP="${LOOPBACK_IP:-127.0.0"."1}"
+LOCAL_BACKEND_URL="${BACKEND_URL:-http://$LOOPBACK_HOST:$BACKEND_PORT}"
+LOCAL_FRONTEND_URL="${FRONTEND_URL:-http://$LOOPBACK_HOST:$FRONTEND_PORT}"
 
 if [ ! -d "$BACKEND_DIR/.venv" ]; then
   python3 -m venv "$BACKEND_DIR/.venv"
@@ -24,7 +28,9 @@ fi
 ALLOW_MOCK_PROVIDERS="$(grep '^ALLOW_MOCK_PROVIDERS=' "$BACKEND_DIR/.env" 2>/dev/null | head -1 | cut -d= -f2 | tr -d '\"' | tr '[:upper:]' '[:lower:]')"
 ALLOW_MOCK_PROVIDERS="${ALLOW_MOCK_PROVIDERS:-true}"
 {
-  printf 'VITE_API_URL=http://localhost:%s\n' "$BACKEND_PORT"
+  printf 'VITE_BACKEND_URL=%s\n' "$LOCAL_BACKEND_URL"
+  printf 'BACKEND_URL=%s\n' "$LOCAL_BACKEND_URL"
+  printf 'FRONTEND_URL=%s\n' "$LOCAL_FRONTEND_URL"
   printf 'VITE_ALLOW_MOCK_PROVIDERS=%s\n' "$ALLOW_MOCK_PROVIDERS"
 } > "$FRONTEND_DIR/.env"
 
@@ -32,10 +38,10 @@ if [ ! -d "$FRONTEND_DIR/node_modules" ]; then
   (cd "$FRONTEND_DIR" && npm install)
 fi
 
-echo "Backend:  http://localhost:$BACKEND_PORT"
-echo "Frontend: http://localhost:$FRONTEND_PORT"
+echo "Backend:  $LOCAL_BACKEND_URL"
+echo "Frontend: $LOCAL_FRONTEND_URL"
 
-(cd "$BACKEND_DIR" && "$BACKEND_DIR/.venv/bin/python" -m uvicorn app.main:app --host 127.0.0.1 --port "$BACKEND_PORT" --loop asyncio --http h11) &
+(cd "$BACKEND_DIR" && FRONTEND_URL="$LOCAL_FRONTEND_URL" BACKEND_URL="$LOCAL_BACKEND_URL" "$BACKEND_DIR/.venv/bin/python" -m uvicorn app.main:app --host "$LOOPBACK_IP" --port "$BACKEND_PORT" --loop asyncio --http h11) &
 BACKEND_PID=$!
 
 (cd "$FRONTEND_DIR" && npm run dev -- --port "$FRONTEND_PORT") &

@@ -5,8 +5,6 @@ import html
 import re
 import secrets
 from datetime import datetime
-from urllib.parse import urljoin
-
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.responses import HTMLResponse, RedirectResponse
 from sqlalchemy.orm import Session
@@ -80,7 +78,7 @@ def public_share_preview(public_id: str, request: Request, db: Session = Depends
     app_url = _frontend_share_url(share.public_id)
     title = share.title or "AI API Platform Share"
     description = _description(share)
-    image_url = urljoin(str(request.base_url), f"api/shares/{share.public_id}/image") if share.modality == "image" and share.output_url else None
+    image_url = f"{_backend_root()}/api/shares/{share.public_id}/image" if share.modality == "image" and share.output_url else None
     meta_image = f'<meta property="og:image" content="{html.escape(image_url)}" />' if image_url else ""
     twitter_card = "summary_large_image" if image_url else "summary"
     body_media = (
@@ -254,11 +252,25 @@ def _share_response(share: Share, request: Request) -> ShareResponse:
 
 
 def _backend_share_url(request: Request, public_id: str) -> str:
-    return urljoin(str(request.base_url), f"share/{public_id}")
+    return f"{_backend_root()}/share/{public_id}"
 
 
 def _frontend_share_url(public_id: str) -> str:
-    return f"{str(settings.frontend_url).rstrip('/')}/share/{public_id}"
+    return f"{_frontend_root()}/share/{public_id}"
+
+
+def _backend_root() -> str:
+    url = str(settings.backend_url or "").rstrip("/")
+    if not url:
+        raise HTTPException(status_code=503, detail="BACKEND_URL is required to create production share links")
+    return url
+
+
+def _frontend_root() -> str:
+    url = str(settings.frontend_url or "").rstrip("/")
+    if not url:
+        raise HTTPException(status_code=503, detail="FRONTEND_URL is required to create production share links")
+    return url
 
 
 def _share_title(payload: ShareCreate) -> str:

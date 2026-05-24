@@ -16,6 +16,8 @@ services:
         value: sqlite:///./ai_platform.db
       - key: FRONTEND_URL
         sync: false
+      - key: BACKEND_URL
+        sync: false
       - key: CORS_ORIGINS
         sync: false
       - key: SECRET_KEY
@@ -43,8 +45,6 @@ services:
       - key: STRIPE_SECRET_KEY
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: STRIPE_PRICE_STARTER
         sync: false
       - key: STRIPE_PRICE_PRO
         sync: false

@@ -37,11 +37,14 @@ Alternative Vercel setup: set the project root directory to `frontend`, install 
 Set these Vercel environment variables for Production:
 
 ```bash
-VITE_API_URL=https://ai-api-platform-pnut.onrender.com
+BACKEND_URL=<your production backend URL>
+FRONTEND_URL=<your production frontend URL>
+VITE_BACKEND_URL=<your production backend URL>
+VITE_FRONTEND_URL=<your production frontend URL>
 VITE_ALLOW_MOCK_PROVIDERS=false
 ```
 
-`VITE_API_URL` must be the public Render backend URL, without a trailing slash. A template is available at `frontend/.env.production.example`.
+`BACKEND_URL` must be the public backend URL, without a trailing slash. `FRONTEND_URL` must be the public custom frontend domain, without a trailing slash.
 
 ## Backend: Render
 
@@ -80,8 +83,9 @@ PYTHON_VERSION=3.11.9
 SECRET_KEY=<secret: generate a long random value>
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
 DATABASE_URL=sqlite:///./ai_platform.db
-FRONTEND_URL=https://ai-api-platform-silk.vercel.app
-CORS_ORIGINS=https://ai-api-platform-silk.vercel.app
+FRONTEND_URL=<your production frontend URL>
+BACKEND_URL=<your production backend URL>
+CORS_ORIGINS=<your production frontend URL>
 ALLOW_MOCK_PROVIDERS=false
 
 OPENAI_API_KEY=<secret>
@@ -102,14 +106,14 @@ OPENAI_IMAGE_MODEL=gpt-image-2
 
 STRIPE_SECRET_KEY=<secret>
 STRIPE_WEBHOOK_SECRET=<secret>
-STRIPE_PRICE_STARTER=<price id>
 STRIPE_PRICE_PRO=<price id>
+STRIPE_PRICE_ENTERPRISE=<optional price id>
 ```
 
-`FRONTEND_URL` and `CORS_ORIGINS` must include the final Vercel production domain. The backend also allows `https://*.vercel.app` preview deployments by regex. For custom domains, set `CORS_ORIGINS` to a comma-separated list:
+`FRONTEND_URL`, `BACKEND_URL`, and `CORS_ORIGINS` must use the final production custom domains. Set `CORS_ORIGINS` to a comma-separated list if you have more than one allowed frontend origin:
 
 ```bash
-CORS_ORIGINS=https://ai-api-platform-silk.vercel.app,https://www.yourdomain.com
+CORS_ORIGINS=<your production frontend URL>,<optional secondary frontend URL>
 ```
 
 A template is available at `backend/.env.production.example`.
@@ -119,7 +123,7 @@ A template is available at `backend/.env.production.example`.
 After the backend deploys, configure Stripe to send webhooks to:
 
 ```bash
-https://YOUR_RENDER_SERVICE.onrender.com/api/billing/webhook
+<your production backend URL>/api/billing/webhook
 ```
 
 Then copy the Stripe webhook signing secret into `STRIPE_WEBHOOK_SECRET` on Render.
@@ -127,9 +131,11 @@ Then copy the Stripe webhook signing secret into `STRIPE_WEBHOOK_SECRET` on Rend
 ## Production Checklist
 
 - Confirm no real secrets are committed to the repository.
-- Set Vercel `VITE_API_URL` to `https://ai-api-platform-pnut.onrender.com`.
+- Set Vercel `BACKEND_URL` and `VITE_BACKEND_URL` to the production backend URL.
+- Set Vercel `FRONTEND_URL` and `VITE_FRONTEND_URL` to the production frontend URL.
 - Set Vercel `VITE_ALLOW_MOCK_PROVIDERS=false`.
-- Set Render `FRONTEND_URL` to the Vercel frontend URL.
+- Set Render `FRONTEND_URL` to the production frontend URL.
+- Set Render `BACKEND_URL` to the production backend URL.
 - Set Render `CORS_ORIGINS` to every allowed frontend origin.
 - Set Render `SECRET_KEY` to a long random secret.
 - Set provider API keys, including `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, and `ANTHROPIC_API_KEY`, plus Stripe variables in Render.

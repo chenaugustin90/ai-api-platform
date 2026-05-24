@@ -11,6 +11,12 @@ export default function SharedPreview() {
 
   useEffect(() => {
     let mounted = true
+    if (!API_URL) {
+      setError('Missing BACKEND_URL. Configure the production backend URL before loading public shares.')
+      return () => {
+        mounted = false
+      }
+    }
     fetch(`${API_URL}/api/shares/${id}`)
       .then(async (response) => {
         const data = await response.json().catch(() => null)

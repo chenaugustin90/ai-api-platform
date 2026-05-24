@@ -22,12 +22,12 @@ cp .env.example .env
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+FRONTEND_URL=<frontend URL> BACKEND_URL=<backend URL> uvicorn app.main:app --reload
 ```
 
-The API runs at `http://localhost:8000`.
+The API runs at the `BACKEND_URL` you configure.
 
-Interactive OpenAPI docs are available at `http://localhost:8000/docs`.
+Interactive OpenAPI docs are available at `<BACKEND_URL>/docs`.
 
 ## Frontend
 
@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-The app runs at `http://localhost:5173`.
+The app runs at the frontend URL printed by the dev server.
 
 ## Provider Routing
 
@@ -77,7 +77,7 @@ Set `ALLOW_MOCK_PROVIDERS=false` in production so missing provider keys fail lou
 Create an API key from the Usage page, then call generation endpoints:
 
 ```bash
-curl -X POST http://localhost:8000/api/generate/text \
+curl -X POST <BACKEND_URL>/api/generate/text \
   -H "Content-Type: application/json" \
   -H "X-API-Key: ai_your_key" \
   -d '{"provider":"openai","prompt":"Write a concise API launch announcement"}'
@@ -89,11 +89,12 @@ Set these in `backend/.env`:
 
 - `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_PRICE_STARTER`
 - `STRIPE_PRICE_PRO`
+- `FRONTEND_URL`
+- `BACKEND_URL`
 
 Local webhook testing example:
 
 ```bash
-stripe listen --forward-to localhost:8000/api/billing/webhook
+stripe listen --forward-to <BACKEND_URL>/api/billing/webhook
 ```

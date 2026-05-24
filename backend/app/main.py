@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
 
 from app.core.config import get_settings
 from app.db.init_db import init_db
@@ -12,17 +15,14 @@ settings = get_settings()
 
 app = FastAPI(title=settings.app_name, version="0.1.0")
 
-allowed_origins = {
-    str(settings.frontend_url).rstrip("/"),
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-}
+allowed_origins = set()
+if str(settings.frontend_url).strip():
+    allowed_origins.add(str(settings.frontend_url).rstrip("/"))
 allowed_origins.update(origin.strip().rstrip("/") for origin in settings.cors_origins.split(",") if origin.strip())
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=sorted(allowed_origins),
-    allow_origin_regex=r"^(https://[a-zA-Z0-9-]+\.vercel\.app|http://(localhost|127\.0\.0\.1|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3}):5173)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -57,6 +57,22 @@ def provider_health():
         "providers": providers,
         "legacy_status": provider_key_status(),
     }
+
+
+@app.get("/.well-known")
+def well_known_index():
+    return {"apple_pay_domain_association": "/.well-known/apple-developer-merchantid-domain-association"}
+
+
+@app.get("/.well-known/apple-developer-merchantid-domain-association", include_in_schema=False)
+def apple_pay_domain_association():
+    path = Path(__file__).resolve().parent / "static" / ".well-known" / "apple-developer-merchantid-domain-association"
+    if path.exists():
+        return FileResponse(path, media_type="text/plain")
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Upload Stripe's apple-developer-merchantid-domain-association file here before Apple Pay domain verification."},
+    )
 
 
 app.include_router(auth.router, prefix="/api")

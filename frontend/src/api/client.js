@@ -1,28 +1,17 @@
-const configuredApiUrl = (import.meta.env.VITE_API_URL || 'https://ai-api-platform-pnut.onrender.com').replace(/\/$/, '')
-export const API_URL = resolveApiUrl(configuredApiUrl)
+const injectedEnv = typeof process !== 'undefined' ? process.env || {} : {}
+const configuredApiUrl = (
+  injectedEnv.BACKEND_URL ||
+  import.meta.env.VITE_BACKEND_URL ||
+  import.meta.env.VITE_API_URL ||
+  ''
+).replace(/\/$/, '')
+export const API_URL = configuredApiUrl
+export const FRONTEND_URL = (
+  injectedEnv.FRONTEND_URL ||
+  import.meta.env.VITE_FRONTEND_URL ||
+  ''
+).replace(/\/$/, '')
 export const MOCK_PROVIDERS_ENABLED = import.meta.env.VITE_ALLOW_MOCK_PROVIDERS === 'true'
-
-function resolveApiUrl(configuredUrl) {
-  if (typeof window === 'undefined') return configuredUrl
-
-  try {
-    const apiUrl = new URL(configuredUrl)
-    const pageHost = window.location.hostname
-    const apiIsLocalhost = ['localhost', '127.0.0.1', '::1'].includes(apiUrl.hostname)
-    const pageIsLocalhost = ['localhost', '127.0.0.1', '::1'].includes(pageHost)
-
-    if (apiIsLocalhost && !pageIsLocalhost) {
-      apiUrl.hostname = pageHost
-      apiUrl.port = apiUrl.port || '8002'
-      apiUrl.protocol = window.location.protocol === 'https:' ? 'https:' : 'http:'
-      return apiUrl.toString().replace(/\/$/, '')
-    }
-  } catch {
-    return configuredUrl
-  }
-
-  return configuredUrl
-}
 
 export function getToken() {
   return localStorage.getItem('token')
@@ -37,6 +26,7 @@ export function clearToken() {
 }
 
 export async function api(path, options = {}) {
+  if (!API_URL) throw new Error('Missing BACKEND_URL. Configure the production backend URL before using the API.')
   const headers = new Headers(options.headers || {})
   if (!headers.has('Content-Type') && options.body) headers.set('Content-Type', 'application/json')
   const token = getToken()
@@ -51,6 +41,7 @@ export async function api(path, options = {}) {
 }
 
 export async function apiKeyRequest(path, apiKey, body, options = {}) {
+  if (!API_URL) throw new Error('Missing BACKEND_URL. Configure the production backend URL before using the API.')
   const response = await fetch(`${API_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
@@ -90,6 +81,7 @@ function formatApiError(data) {
   if (Array.isArray(detail)) return detail.map((item) => item.msg || item.message || 'Invalid request').join(', ')
   if (detail?.provider && detail?.message) return detail.message
   if (detail?.provider && detail?.error) return `${detail.provider} request failed. Check provider configuration, model access, and quota.`
+  if (detail?.code === 'stripe_not_configured' && Array.isArray(detail.missing)) return `${detail.message} Missing: ${detail.missing.join(', ')}.`
   if (detail?.message) return detail.message
   return 'Request failed. Please check provider configuration, model access, and credits.'
 }
