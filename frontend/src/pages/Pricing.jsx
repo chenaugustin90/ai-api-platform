@@ -1,5 +1,5 @@
 import { Building2, Check, CreditCard, Loader2, ShieldCheck, Sparkles, WalletCards, Zap } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { GlassButton, GlassCard } from '../components/ui'
 
@@ -9,7 +9,7 @@ const plans = [
     icon: Sparkles,
     name: 'Free',
     price: '$0',
-    credits: '1,000 credits/month',
+    credits: '100 credits',
     limits: 'Development API limits',
     description: 'Explore generation, usage tracking, docs, and provider onboarding.',
     features: ['API keys', 'Usage dashboard', 'Prompt library', 'Provider onboarding']
@@ -18,8 +18,8 @@ const plans = [
     tier: 'pro',
     icon: Zap,
     name: 'Pro',
-    price: '$199',
-    credits: '100,000 credits/month',
+    price: '$9.99',
+    credits: '5,000 credits/month',
     limits: 'Production API limits',
     description: 'Scale real text and image workloads with billing and provider telemetry.',
     features: ['Real provider routing', 'Higher credit pool', 'Stripe subscription', 'Generation history']
@@ -28,8 +28,8 @@ const plans = [
     tier: 'enterprise',
     icon: Building2,
     name: 'Enterprise',
-    price: 'Custom',
-    credits: 'Custom credits/month',
+    price: '$29.99',
+    credits: '25,000 credits/month',
     limits: 'Dedicated API limits',
     description: 'For teams that need custom provider governance, procurement, and rollout support.',
     features: ['Custom credit pools', 'Provider governance', 'Priority support', 'Security review support']
@@ -45,11 +45,18 @@ const creditPacks = [
 export default function Pricing() {
   const [loadingKey, setLoadingKey] = useState('')
   const [error, setError] = useState('')
+  const [billingConfig, setBillingConfig] = useState(null)
+
+  useEffect(() => {
+    api('/api/billing/config').then(setBillingConfig).catch((err) => setError(err.message))
+  }, [])
+
+  const checkoutReady = billingConfig?.ready_for_checkout === true
 
   async function checkoutSubscription(tier) {
     if (tier === 'free') return
-    if (tier === 'enterprise') {
-      window.location.href = 'mailto:sales@example.com?subject=Enterprise%20AI%20API%20Platform'
+    if (!checkoutReady) {
+      setError(missingConfigMessage(billingConfig))
       return
     }
     await startCheckout(`subscription-${tier}`, {
@@ -59,6 +66,10 @@ export default function Pricing() {
   }
 
   async function checkoutCredits(packId) {
+    if (!checkoutReady) {
+      setError(missingConfigMessage(billingConfig))
+      return
+    }
     await startCheckout(`credits-${packId}`, {
       purchase_type: 'credits',
       pack_id: packId
@@ -86,6 +97,13 @@ export default function Pricing() {
       </div>
 
       <PaymentMethodsStrip />
+      {billingConfig && !billingConfig.ready_for_checkout && (
+        <GlassCard className="billing-config-warning p-4">
+          <p className="eyebrow mb-2">Stripe setup required</p>
+          <h2 className="text-lg font-bold text-white">Payments are paused until production Stripe variables are configured.</h2>
+          <p className="muted mt-2 text-sm">Missing: {billingConfig.missing.join(', ')}</p>
+        </GlassCard>
+      )}
       {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
 
       <section className="space-y-4">
@@ -112,9 +130,9 @@ export default function Pricing() {
                     <p key={feature} className="flex items-center gap-2 text-sm text-white"><Check className="h-4 w-4 text-[#00E5FF]" /> {feature}</p>
                   ))}
                 </div>
-                <GlassButton className="mt-auto" onClick={() => checkoutSubscription(plan.tier)} disabled={loadingKey === key || plan.tier === 'free'}>
+                <GlassButton className="mt-auto" onClick={() => checkoutSubscription(plan.tier)} disabled={loadingKey === key || plan.tier === 'free' || !checkoutReady}>
                   {loadingKey === key && <Loader2 className="h-4 w-4 animate-spin" />}
-                  {plan.tier === 'free' ? 'Current base plan' : plan.tier === 'enterprise' ? 'Contact sales' : 'Subscribe'}
+                  {plan.tier === 'free' ? 'Current base plan' : 'Subscribe'}
                 </GlassButton>
               </GlassCard>
             )
@@ -140,7 +158,7 @@ export default function Pricing() {
                 <p className="mt-2 text-3xl font-black text-white">{pack.price}</p>
                 <p className="pricing-plan-limit">{pack.credits}</p>
                 <p className="muted mt-3 text-sm">{pack.detail}</p>
-                <GlassButton className="mt-5 w-full" onClick={() => checkoutCredits(pack.pack_id)} disabled={loadingKey === key}>
+                <GlassButton className="mt-5 w-full" onClick={() => checkoutCredits(pack.pack_id)} disabled={loadingKey === key || !checkoutReady}>
                   {loadingKey === key && <Loader2 className="h-4 w-4 animate-spin" />}
                   Buy credits
                 </GlassButton>
@@ -180,4 +198,9 @@ function formatCheckoutError(message) {
     return `${message}. Add the Stripe env vars in Render, then redeploy the backend.`
   }
   return message
+}
+
+function missingConfigMessage(config) {
+  if (!config?.missing?.length) return 'Stripe payments are not ready yet.'
+  return `Stripe payments are not ready. Missing: ${config.missing.join(', ')}.`
 }

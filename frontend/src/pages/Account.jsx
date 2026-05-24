@@ -27,7 +27,8 @@ export default function Account() {
   const billing = dashboard?.billing || {
     subscription_tier: user?.subscription_tier || 'free',
     subscription_status: user?.subscription_status || 'free',
-    credits_remaining: user?.credits_remaining || 0
+    credits_remaining: user?.credits_remaining || 0,
+    missing_payment_config: []
   }
 
   useEffect(() => {

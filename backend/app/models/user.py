@@ -19,7 +19,7 @@ class User(Base):
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     subscription_tier: Mapped[str] = mapped_column(String(50), default="free")
     subscription_status: Mapped[str] = mapped_column(String(50), default="free")
-    credits_remaining: Mapped[int] = mapped_column(Integer, default=1000)
+    credits_remaining: Mapped[int] = mapped_column(Integer, default=100)
     stripe_customer_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     stripe_subscription_id: Mapped[Optional[str]] = mapped_column(String(255), index=True)
     subscription_current_period_end: Mapped[Optional[datetime]] = mapped_column(DateTime)

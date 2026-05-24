@@ -16,6 +16,7 @@ class CheckoutResponse(BaseModel):
     checkout_url: str
     mock: bool = False
     tier: str | None = None
+    purchase_type: str | None = None
 
 
 class PortalResponse(BaseModel):
@@ -31,6 +32,8 @@ class BillingStatus(BaseModel):
     subscription_current_period_end: datetime | None = None
     next_billing_date: datetime | None = None
     customer_portal_available: bool = False
+    payment_configured: bool = False
+    missing_payment_config: list[str] = []
 
 
 class BillingRecordResponse(BaseModel):
@@ -46,3 +49,13 @@ class BillingRecordResponse(BaseModel):
     created_at: datetime
 
     model_config = {"from_attributes": True}
+
+
+class BillingConfigStatus(BaseModel):
+    configured: bool
+    ready_for_checkout: bool
+    missing: list[str]
+    required: list[str]
+    payment_methods: list[str]
+    plans: dict
+    credit_packs: dict

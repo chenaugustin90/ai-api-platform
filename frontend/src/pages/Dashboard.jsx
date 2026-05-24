@@ -48,6 +48,7 @@ export default function Dashboard() {
   const { user } = useAuth()
   const [data, setData] = useState(null)
   const [usageEvents, setUsageEvents] = useState([])
+  const [billingHistory, setBillingHistory] = useState([])
   const [searchParams, setSearchParams] = useSearchParams()
   const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false)
   const [generator, setGenerator] = useState(() => initialGeneratorState())
@@ -65,12 +66,14 @@ export default function Dashboard() {
   }, [])
 
   async function refreshDashboard() {
-    const [dashboardData, eventsData] = await Promise.all([
+    const [dashboardData, eventsData, billingHistoryData] = await Promise.all([
       api('/api/dashboard'),
-      api('/api/usage/events').catch(() => [])
+      api('/api/usage/events').catch(() => []),
+      api('/api/billing/history').catch(() => [])
     ])
     setData(dashboardData)
     setUsageEvents(eventsData)
+    setBillingHistory(billingHistoryData)
   }
 
   useEffect(() => {
@@ -270,6 +273,7 @@ export default function Dashboard() {
         />
       )}
       <DashboardHero user={user} usage={usage} billing={data.billing} recentGenerations={recentGenerations} />
+      {data.billing && !data.billing.payment_configured && <BillingSetupWarning missing={data.billing.missing_payment_config || []} />}
       {missingProviders.length > 0 && <ProviderWarning missingProviders={missingProviders} />}
       <DashboardGenerator
         generator={generator}
@@ -298,6 +302,7 @@ export default function Dashboard() {
         <CreditsTrendChart creditsRemaining={usage.credits_remaining} events={usageEvents} />
       </div>
       {data.billing && <BillingStatus billing={data.billing} />}
+      <DashboardBillingHistory records={billingHistory} />
       {!hasGenerations && generatorHistory.length === 0 && (
         <EmptyState
           title="Your AI workspace is ready"
@@ -312,6 +317,26 @@ export default function Dashboard() {
       <Gallery title="Generated images" items={generatedImages} type="image" />
       <Gallery title="Generated videos" items={generatedVideos} type="video" />
     </div>
+  )
+}
+
+function BillingSetupWarning({ missing }) {
+  return (
+    <GlassCard className="billing-config-warning p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-start gap-3">
+          <span className="provider-warning-icon">
+            <AlertTriangle className="h-5 w-5" />
+          </span>
+          <div>
+            <p className="eyebrow mb-1">Stripe setup required</p>
+            <h2 className="text-xl font-bold text-white">Payments are paused until Stripe is fully configured.</h2>
+            <p className="muted mt-2 text-sm">Missing: {missing.length ? missing.join(', ') : 'Stripe environment variables'}</p>
+          </div>
+        </div>
+        <GlassButton as={Link} to="/pricing" variant="secondary">Review pricing</GlassButton>
+      </div>
+    </GlassCard>
   )
 }
 
@@ -350,6 +375,20 @@ function getDisplayName(user) {
   if (user?.full_name) return user.full_name.split(' ')[0]
   if (user?.email) return user.email.split('@')[0]
   return 'there'
+}
+
+function formatDateTime(value) {
+  if (!value) return 'Unknown'
+  const date = new Date(value)
+  if (!Number.isFinite(date.getTime())) return 'Unknown'
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function formatCurrency(amountCents, currency = 'usd') {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: String(currency || 'usd').toUpperCase()
+  }).format((Number(amountCents) || 0) / 100)
 }
 
 function getMissingProviders(providerStatus = {}) {
@@ -769,6 +808,41 @@ function BillingStatus({ billing }) {
           )}
         </div>
       </div>
+    </GlassCard>
+  )
+}
+
+function DashboardBillingHistory({ records }) {
+  const visibleRecords = records.slice(0, 5)
+
+  return (
+    <GlassCard as="section" className="billing-history-panel p-5">
+      <div className="dashboard-section-head mb-4">
+        <div>
+          <p className="eyebrow mb-1">Payment history</p>
+          <h2 className="text-xl font-bold text-white">Billing activity</h2>
+        </div>
+        <CreditCard className="h-5 w-5 text-[#00E5FF]" />
+      </div>
+      {visibleRecords.length === 0 ? (
+        <p className="muted text-sm">No billing records yet.</p>
+      ) : (
+        <div className="billing-history-list">
+          {visibleRecords.map((record) => (
+            <article key={record.id} className="billing-history-row">
+              <div className="billing-history-icon"><CreditCard className="h-4 w-4" /></div>
+              <div className="min-w-0 flex-1">
+                <h3>{record.description || record.purchase_type}</h3>
+                <p>{formatDateTime(record.created_at)} / {record.status} / {record.mode}</p>
+              </div>
+              <div className="billing-history-amount">
+                <strong>{formatCurrency(record.amount_cents, record.currency)}</strong>
+                <span>+{Number(record.credits || 0).toLocaleString()} credits</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </GlassCard>
   )
 }

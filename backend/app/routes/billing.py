@@ -10,16 +10,21 @@ from app.api.deps import get_current_user
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.models import BillingEvent, BillingRecord, User
-from app.schemas.billing import BillingRecordResponse, BillingStatus, CheckoutRequest, CheckoutResponse, PortalResponse
+from app.schemas.billing import BillingConfigStatus, BillingRecordResponse, BillingStatus, CheckoutRequest, CheckoutResponse, PortalResponse
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 settings = get_settings()
 
 PLAN_CREDITS = {
-    "free": 1_000,
-    "starter": 10_000,
-    "pro": 100_000,
-    "enterprise": 250_000,
+    "free": 100,
+    "pro": 5_000,
+    "enterprise": 25_000,
+}
+
+PLAN_CATALOG = {
+    "free": {"name": "Free", "amount_cents": 0, "credits": 100},
+    "pro": {"name": "Pro", "amount_cents": 999, "credits": 5_000},
+    "enterprise": {"name": "Enterprise", "amount_cents": 2999, "credits": 25_000},
 }
 
 CREDIT_PACKS = {
@@ -29,13 +34,13 @@ CREDIT_PACKS = {
 }
 
 PAID_PRICE_IDS = {
-    "starter": lambda: settings.stripe_price_starter,
     "pro": lambda: settings.stripe_price_pro,
     "enterprise": lambda: settings.stripe_price_enterprise,
 }
 
 SUBSCRIPTION_PAYMENT_METHOD_TYPES = ["card"]
 ONE_TIME_PAYMENT_METHOD_TYPES = ["card", "alipay", "wechat_pay"]
+REQUIRED_STRIPE_CONFIG = ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_PRO", "FRONTEND_URL"]
 
 
 @router.post("/checkout", response_model=CheckoutResponse)
@@ -45,6 +50,7 @@ def create_checkout(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    _ensure_checkout_ready(payload)
     if payload.purchase_type == "credits":
         return _create_credit_checkout(payload, request, user, db)
     return _create_subscription_checkout(payload, request, user, db)
@@ -52,8 +58,9 @@ def create_checkout(
 
 @router.post("/portal", response_model=PortalResponse)
 def create_customer_portal(request: Request, user: User = Depends(get_current_user)):
-    if not settings.stripe_secret_key:
-        raise HTTPException(status_code=400, detail="Stripe is not configured")
+    missing = _missing_stripe_config()
+    if missing:
+        raise HTTPException(status_code=400, detail=_config_error(missing or ["STRIPE_SECRET_KEY", "FRONTEND_URL"]))
     if not user.stripe_customer_id:
         raise HTTPException(status_code=400, detail="No Stripe customer exists for this account")
     stripe.api_key = settings.stripe_secret_key
@@ -67,6 +74,20 @@ def create_customer_portal(request: Request, user: User = Depends(get_current_us
 @router.get("/status", response_model=BillingStatus)
 def billing_status(user: User = Depends(get_current_user)):
     return _billing_status_for_user(user)
+
+
+@router.get("/config", response_model=BillingConfigStatus)
+def billing_config(user: User = Depends(get_current_user)):
+    missing = _missing_stripe_config()
+    return BillingConfigStatus(
+        configured=not missing,
+        ready_for_checkout=not missing,
+        missing=missing,
+        required=REQUIRED_STRIPE_CONFIG,
+        payment_methods=["Credit cards", "Debit cards", "Apple Pay", "Google Pay", "Alipay", "WeChat Pay"],
+        plans=PLAN_CATALOG,
+        credit_packs=CREDIT_PACKS,
+    )
 
 
 @router.get("/history", response_model=list[BillingRecordResponse])
@@ -108,6 +129,8 @@ async def stripe_webhook(request: Request, db: Session = Depends(get_db)):
         _handle_subscription_deleted(obj, db)
     elif event_type in {"invoice.payment_succeeded", "invoice.paid"}:
         _handle_invoice_paid(obj, db, event["id"])
+    elif event_type == "invoice.payment_failed":
+        _handle_invoice_payment_failed(obj, db, event["id"])
 
     db.add(BillingEvent(stripe_event_id=event["id"], event_type=event_type))
     db.commit()
@@ -120,37 +143,53 @@ def _create_subscription_checkout(payload: CheckoutRequest, request: Request, us
     if tier not in PAID_PRICE_IDS:
         raise HTTPException(status_code=400, detail="Unsupported subscription plan")
 
-    missing = []
-    if not settings.stripe_secret_key:
-        missing.append("STRIPE_SECRET_KEY")
-    if not price_id:
-        missing.append(f"STRIPE_PRICE_{tier.upper()}")
+    missing = _missing_checkout_config(payload)
     if missing:
-        _apply_mock_purchase(user, db, "subscription", tier, PLAN_CREDITS[tier], 0, "Mock subscription")
-        return CheckoutResponse(
-            checkout_url=f"{_frontend_url(request)}/billing/success?checkout=success&mode=mock&tier={tier}",
-            mock=True,
-            tier=tier,
-        )
+        if _allow_mock_checkout():
+            _apply_mock_purchase(user, db, "subscription", tier, PLAN_CREDITS[tier], 0, "Mock subscription")
+            return CheckoutResponse(
+                checkout_url=f"{_frontend_url(request)}/billing/success?checkout=success&mode=mock&tier={tier}",
+                mock=True,
+                tier=tier,
+                purchase_type="subscription",
+            )
+        raise HTTPException(status_code=503, detail=_config_error(missing))
+
+    if not price_id and tier != "enterprise":
+        raise HTTPException(status_code=503, detail=_config_error([f"STRIPE_PRICE_{tier.upper()}"]))
+
+    if not price_id and tier == "enterprise":
+        line_item = {
+            "price_data": {
+                "currency": "usd",
+                "product_data": {"name": "Enterprise", "description": "25,000 credits/month"},
+                "unit_amount": PLAN_CATALOG["enterprise"]["amount_cents"],
+                "recurring": {"interval": "month"},
+            },
+            "quantity": 1,
+        }
+    else:
+        line_item = {"price": price_id, "quantity": 1}
 
     stripe.api_key = settings.stripe_secret_key
     metadata = {"user_id": str(user.id), "purchase_type": "subscription", "tier": tier, "credits": str(PLAN_CREDITS[tier])}
     session_params = {
         "mode": "subscription",
-        "line_items": [{"price": price_id, "quantity": 1}],
+        "line_items": [line_item],
         "success_url": f"{_frontend_url(request)}/billing/success?session_id={{CHECKOUT_SESSION_ID}}",
         "cancel_url": f"{_frontend_url(request)}/billing/cancel?type=subscription&tier={tier}",
         "client_reference_id": str(user.id),
         "metadata": metadata,
         "subscription_data": {"metadata": metadata},
         "payment_method_types": SUBSCRIPTION_PAYMENT_METHOD_TYPES,
+        "allow_promotion_codes": True,
     }
     if user.stripe_customer_id:
         session_params["customer"] = user.stripe_customer_id
     else:
         session_params["customer_email"] = user.email
     session = stripe.checkout.Session.create(**session_params)
-    return CheckoutResponse(checkout_url=session.url, tier=tier)
+    return CheckoutResponse(checkout_url=session.url, tier=tier, purchase_type="subscription")
 
 
 def _create_credit_checkout(payload: CheckoutRequest, request: Request, user: User, db: Session) -> CheckoutResponse:
@@ -159,13 +198,17 @@ def _create_credit_checkout(payload: CheckoutRequest, request: Request, user: Us
     if not pack:
         raise HTTPException(status_code=400, detail="Unsupported credits pack")
 
-    if not settings.stripe_secret_key:
-        _apply_mock_purchase(user, db, "credits", pack_id, pack["credits"], pack["amount_cents"], f"{pack['name']} mock purchase")
-        return CheckoutResponse(
-            checkout_url=f"{_frontend_url(request)}/billing/success?checkout=success&mode=mock&type=credits&pack={pack_id}",
-            mock=True,
-            tier=pack_id,
-        )
+    missing = _missing_checkout_config(payload)
+    if missing:
+        if _allow_mock_checkout():
+            _apply_mock_purchase(user, db, "credits", pack_id, pack["credits"], pack["amount_cents"], f"{pack['name']} mock purchase")
+            return CheckoutResponse(
+                checkout_url=f"{_frontend_url(request)}/billing/success?checkout=success&mode=mock&type=credits&pack={pack_id}",
+                mock=True,
+                tier=pack_id,
+                purchase_type="credits",
+            )
+        raise HTTPException(status_code=503, detail=_config_error(missing))
 
     stripe.api_key = settings.stripe_secret_key
     metadata = {
@@ -196,10 +239,11 @@ def _create_credit_checkout(payload: CheckoutRequest, request: Request, user: Us
         "payment_intent_data": {"metadata": metadata},
         "payment_method_types": ONE_TIME_PAYMENT_METHOD_TYPES,
         "payment_method_options": {"wechat_pay": {"client": "web"}},
+        "allow_promotion_codes": True,
     }
     session_params = {key: value for key, value in session_params.items() if value is not None}
     session = stripe.checkout.Session.create(**session_params)
-    return CheckoutResponse(checkout_url=session.url, tier=pack_id)
+    return CheckoutResponse(checkout_url=session.url, tier=pack_id, purchase_type="credits")
 
 
 def _handle_checkout_completed(session, db: Session, event_id: str) -> None:
@@ -349,6 +393,36 @@ def _handle_invoice_paid(invoice, db: Session, event_id: str) -> None:
     )
 
 
+def _handle_invoice_payment_failed(invoice, db: Session, event_id: str) -> None:
+    invoice_id = invoice.get("id")
+    if invoice_id and db.query(BillingRecord).filter(BillingRecord.stripe_invoice_id == invoice_id).first():
+        return
+    subscription_id = invoice.get("subscription")
+    user = db.query(User).filter(User.stripe_subscription_id == subscription_id).first() if subscription_id else None
+    if not user:
+        customer_id = invoice.get("customer")
+        user = db.query(User).filter(User.stripe_customer_id == customer_id).first() if customer_id else None
+    if not user:
+        return
+    user.subscription_status = "past_due"
+    db.add(
+        BillingRecord(
+            user_id=user.id,
+            stripe_event_id=event_id,
+            stripe_invoice_id=invoice_id,
+            stripe_subscription_id=subscription_id,
+            purchase_type="subscription",
+            mode="invoice",
+            tier=user.subscription_tier,
+            credits=0,
+            amount_cents=int(invoice.get("amount_due") or 0),
+            currency=(invoice.get("currency") or "usd").lower(),
+            status="failed",
+            description="Subscription payment failed",
+        )
+    )
+
+
 def _apply_subscription(user: User, subscription, tier: str) -> None:
     user.subscription_tier = tier
     user.subscription_status = subscription.get("status") or user.subscription_status or "active"
@@ -464,6 +538,7 @@ def _timestamp_to_datetime(value) -> datetime | None:
 
 
 def _billing_status_for_user(user: User) -> BillingStatus:
+    missing = _missing_stripe_config()
     return BillingStatus(
         subscription_tier=user.subscription_tier or "free",
         subscription_status=user.subscription_status or "free",
@@ -472,12 +547,63 @@ def _billing_status_for_user(user: User) -> BillingStatus:
         stripe_subscription_id=user.stripe_subscription_id,
         subscription_current_period_end=user.subscription_current_period_end,
         next_billing_date=user.subscription_current_period_end,
-        customer_portal_available=bool(settings.stripe_secret_key and user.stripe_customer_id),
+        customer_portal_available=bool(not missing and user.stripe_customer_id),
+        payment_configured=not missing,
+        missing_payment_config=missing,
     )
 
 
 def _frontend_url(request: Request) -> str:
-    origin = request.headers.get("origin")
-    if origin and origin.startswith(("http://", "https://")):
-        return origin.rstrip("/")
     return str(settings.frontend_url).rstrip("/")
+
+
+def _ensure_checkout_ready(payload: CheckoutRequest) -> None:
+    tier = (payload.tier or "").lower()
+    if payload.purchase_type == "subscription" and tier == "free":
+        raise HTTPException(status_code=400, detail="Free plan does not require checkout")
+    if payload.purchase_type == "subscription" and tier and tier not in PAID_PRICE_IDS:
+        raise HTTPException(status_code=400, detail="Unsupported subscription plan")
+    if payload.purchase_type == "credits" and payload.pack_id and payload.pack_id.lower() not in CREDIT_PACKS:
+        raise HTTPException(status_code=400, detail="Unsupported credits pack")
+
+
+def _missing_checkout_config(payload: CheckoutRequest) -> list[str]:
+    missing = _missing_stripe_config()
+    tier = (payload.tier or "pro").lower()
+    if payload.purchase_type == "subscription" and tier == "enterprise":
+        missing = [item for item in missing if item != "STRIPE_PRICE_PRO"]
+    return missing
+
+
+def _missing_stripe_config() -> list[str]:
+    missing = []
+    if not settings.stripe_secret_key:
+        missing.append("STRIPE_SECRET_KEY")
+    if not settings.stripe_webhook_secret:
+        missing.append("STRIPE_WEBHOOK_SECRET")
+    if not settings.stripe_price_pro:
+        missing.append("STRIPE_PRICE_PRO")
+    if _frontend_url_missing():
+        missing.append("FRONTEND_URL")
+    return missing
+
+
+def _frontend_url_missing() -> bool:
+    url = str(settings.frontend_url or "").rstrip("/")
+    if not url:
+        return True
+    if settings.app_env.lower() == "production" and ("localhost" in url or "127.0.0.1" in url):
+        return True
+    return False
+
+
+def _allow_mock_checkout() -> bool:
+    return settings.app_env.lower() != "production"
+
+
+def _config_error(missing: list[str]) -> dict:
+    return {
+        "code": "stripe_not_configured",
+        "message": "Stripe payments are not fully configured. Add the missing environment variables before starting checkout.",
+        "missing": missing,
+    }
