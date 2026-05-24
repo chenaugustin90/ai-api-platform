@@ -44,8 +44,8 @@ PROVIDER_DETAILS = {
     "claude": {
         "name": "Claude",
         "env_var": "ANTHROPIC_API_KEY",
-        "models": ["claude-3-5-haiku-20241022", "claude-sonnet-4-20250514", "claude-3-7-sonnet-20250219"],
-        "test_model": "claude-3-5-haiku-20241022",
+        "models": ["claude-haiku-4-5", "claude-sonnet-4-6", "claude-3-5-haiku-20241022"],
+        "test_model": "claude-haiku-4-5",
         "docs_url": "https://docs.anthropic.com/",
         "setup_steps": [
             "Create an Anthropic API key.",

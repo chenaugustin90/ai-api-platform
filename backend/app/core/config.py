@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     stripe_price_starter: str | None = None
     stripe_price_pro: str | None = None
     stripe_price_enterprise: str | None = None
+    allow_mock_subscriptions: bool = False
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

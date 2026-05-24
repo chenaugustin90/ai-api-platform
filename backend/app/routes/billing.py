@@ -614,7 +614,7 @@ def _is_local_url(url: str) -> bool:
 
 
 def _allow_mock_checkout() -> bool:
-    return settings.app_env.lower() != "production"
+    return bool(settings.allow_mock_subscriptions) and settings.app_env.lower() != "production"
 
 
 def _config_error(missing: list[str]) -> dict:

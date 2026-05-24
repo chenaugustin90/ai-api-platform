@@ -92,6 +92,7 @@ Set these in `backend/.env`:
 - `STRIPE_PRICE_PRO`
 - `FRONTEND_URL`
 - `BACKEND_URL`
+- `ALLOW_MOCK_SUBSCRIPTIONS=false` in production
 
 Local webhook testing example:
 

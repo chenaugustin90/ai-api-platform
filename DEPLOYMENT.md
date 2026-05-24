@@ -50,6 +50,8 @@ VITE_ALLOW_MOCK_PROVIDERS=false
 
 Preferred setup: create the Render service from `render.yaml`.
 
+The Render service should use the persistent disk declared in `render.yaml` and keep `DATABASE_URL=sqlite:////var/data/ai_platform.db`. Without a persistent disk, SQLite data can be lost on redeploy, which means users may not be able to log in with accounts created before the redeploy.
+
 Manual Render settings:
 
 ```bash
@@ -82,11 +84,12 @@ APP_ENV=production
 PYTHON_VERSION=3.11.9
 SECRET_KEY=<secret: generate a long random value>
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
-DATABASE_URL=sqlite:///./ai_platform.db
+DATABASE_URL=sqlite:////var/data/ai_platform.db
 FRONTEND_URL=<your production frontend URL>
 BACKEND_URL=<your production backend URL>
 CORS_ORIGINS=<your production frontend URL>
 ALLOW_MOCK_PROVIDERS=false
+ALLOW_MOCK_SUBSCRIPTIONS=false
 
 OPENAI_API_KEY=<secret>
 DEEPSEEK_API_KEY=<secret>
@@ -140,6 +143,7 @@ Then copy the Stripe webhook signing secret into `STRIPE_WEBHOOK_SECRET` on Rend
 - Set Render `SECRET_KEY` to a long random secret.
 - Set provider API keys, including `OPENAI_API_KEY`, `DEEPSEEK_API_KEY`, and `ANTHROPIC_API_KEY`, plus Stripe variables in Render.
 - Keep `ALLOW_MOCK_PROVIDERS=false` for production provider calls.
+- Keep `ALLOW_MOCK_SUBSCRIPTIONS=false` for production checkout. Enable it only in local development when you intentionally want simulated billing.
 - Run `npm run build` in `frontend`.
 - Run `python3 -m compileall app` in `backend`.
 - Verify Render starts with `python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT`.

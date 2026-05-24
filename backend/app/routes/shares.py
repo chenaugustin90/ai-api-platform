@@ -28,6 +28,7 @@ def create_share(
     db: Session = Depends(get_db),
 ):
     _validate_share_payload(payload)
+    _ensure_share_urls_ready()
     share = Share(
         public_id=_new_public_id(db),
         user_id=user.id,
@@ -271,6 +272,23 @@ def _frontend_root() -> str:
     if not url:
         raise HTTPException(status_code=503, detail="FRONTEND_URL is required to create production share links")
     return url
+
+
+def _ensure_share_urls_ready() -> None:
+    missing = []
+    if not str(settings.backend_url or "").rstrip("/"):
+        missing.append("BACKEND_URL")
+    if not str(settings.frontend_url or "").rstrip("/"):
+        missing.append("FRONTEND_URL")
+    if missing:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "share_links_not_configured",
+                "message": "Production share links require frontend and backend URL environment variables.",
+                "missing": missing,
+            },
+        )
 
 
 def _share_title(payload: ShareCreate) -> str:

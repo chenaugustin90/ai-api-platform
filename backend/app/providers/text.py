@@ -15,12 +15,16 @@ logger = logging.getLogger("app.providers")
 TEXT_DEFAULT_MODELS = {
     "openai": "gpt-4o-mini",
     "deepseek": "deepseek-v4-pro",
-    "claude": "claude-3-5-haiku-20241022",
+    "claude": "claude-haiku-4-5",
     "qwen": "qwen-plus",
 }
 
 ANTHROPIC_MODEL_FALLBACK_ORDER = [
+    "claude-haiku-4-5",
+    "claude-3-5-haiku-latest",
     "claude-3-5-haiku-20241022",
+    "claude-sonnet-4-6",
+    "claude-sonnet-4-5",
     "claude-sonnet-4-20250514",
     "claude-3-7-sonnet-20250219",
     "claude-3-haiku-20240307",
@@ -168,6 +172,10 @@ async def _resolve_anthropic_model(client: httpx.AsyncClient, rejected_model: st
         return None
     for candidate in ANTHROPIC_MODEL_FALLBACK_ORDER:
         if candidate in available and candidate != rejected_model:
+            return candidate
+    for family in ("haiku", "sonnet", "opus"):
+        candidate = next((model for model in available if family in model.lower() and model != rejected_model), None)
+        if candidate:
             return candidate
     return next((model for model in available if model != rejected_model), None)
 

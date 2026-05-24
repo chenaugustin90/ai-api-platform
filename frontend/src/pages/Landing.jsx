@@ -19,9 +19,9 @@ const providers = [
 ]
 
 const plans = [
-  { name: 'Free', price: '$0', credits: '1,000 credits/month', limit: 'Development API limits', features: ['Personal workspace', 'Mock-safe routing', 'Usage dashboard'] },
-  { name: 'Pro', price: '$199', credits: '100,000 credits/month', limit: 'Production API limits', features: ['Real provider routing', 'Priority generation', 'Billing portal ready'] },
-  { name: 'Enterprise', price: 'Custom', credits: 'Custom credit pools', limit: 'Dedicated API limits', features: ['Provider governance', 'Team rollout support', 'Custom procurement'] }
+  { name: 'Free', price: '$0', credits: '100 credits', limit: 'Development API limits', features: ['Personal workspace', 'Provider onboarding', 'Usage dashboard'] },
+  { name: 'Pro', price: '$9.99', credits: '5,000 credits/month', limit: 'Production API limits', features: ['Real provider routing', 'Priority generation', 'Billing portal ready'] },
+  { name: 'Enterprise', price: '$29.99', credits: '25,000 credits/month', limit: 'Dedicated API limits', features: ['Provider governance', 'Team rollout support', 'Higher credit pool'] }
 ]
 
 const testimonials = [
@@ -33,7 +33,7 @@ const testimonials = [
 const faqs = [
   ['Can I use this without provider keys?', 'Yes. Missing provider keys do not crash the app. The dashboard explains what is missing and keeps mock-safe flows usable.'],
   ['How do developers authenticate?', 'Generation endpoints accept an X-API-Key header, while dashboard pages use the logged-in account session.'],
-  ['Does billing require Stripe locally?', 'No. Mock subscription mode simulates successful upgrades when Stripe keys are absent. Real Stripe takes over when env vars are added.'],
+  ['Does production billing require Stripe?', 'Yes. Checkout stays paused until the required Stripe and production URL environment variables are configured.'],
   ['Can I add more AI providers?', 'Yes. Provider-specific code is isolated behind adapters so the route contracts stay stable.']
 ]
 

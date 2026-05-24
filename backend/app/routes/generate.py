@@ -144,7 +144,7 @@ def _estimated_text_model(provider: str, model: str | None) -> str | None:
     return {
         "openai": "gpt-4o-mini",
         "deepseek": "deepseek-v4-pro",
-        "claude": "claude-3-5-haiku-20241022",
+        "claude": "claude-haiku-4-5",
         "qwen": "qwen-plus",
     }.get(provider)
 
