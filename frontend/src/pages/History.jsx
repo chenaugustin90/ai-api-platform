@@ -1,8 +1,10 @@
-import { Copy, Image, RefreshCw, Search, Sparkles, Trash2, Type } from 'lucide-react'
+import { Copy, Image, RefreshCw, Search, Share2, Sparkles, Trash2, Type } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
+import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassInput } from '../components/ui'
 import { addImagesToHistory, deleteImageHistory, deleteTextGenerationHistory, loadImageHistory, loadTextGenerationHistory, saveTextGenerationHistory } from '../utils/generationHistory'
+import { createShareLink } from '../utils/share'
 
 const STYLE_PROMPTS = {
   cinematic: 'Cinematic lighting, premium composition, rich depth, refined color grading.',
@@ -13,10 +15,12 @@ const STYLE_PROMPTS = {
 }
 
 export default function History() {
+  const toast = useToast()
   const [textItems, setTextItems] = useState([])
   const [imageItems, setImageItems] = useState([])
   const [query, setQuery] = useState('')
   const [loadingId, setLoadingId] = useState('')
+  const [sharingId, setSharingId] = useState('')
 
   useEffect(() => {
     refreshHistory()
@@ -101,6 +105,42 @@ export default function History() {
     setImageItems(await deleteImageHistory(id))
   }
 
+  async function shareText(item) {
+    setSharingId(item.id)
+    try {
+      await createShareLink({
+        modality: 'text',
+        prompt: item.prompt,
+        text: item.response || item.text || '',
+        provider: item.provider,
+        model: item.model
+      })
+      toast.success('Share URL copied to clipboard.', 'Share link ready')
+    } catch (err) {
+      toast.error(err.message, 'Could not create share link')
+    } finally {
+      setSharingId('')
+    }
+  }
+
+  async function shareImage(item) {
+    setSharingId(item.id)
+    try {
+      await createShareLink({
+        modality: 'image',
+        prompt: item.prompt,
+        output_url: item.output_url,
+        provider: item.provider,
+        model: item.model
+      })
+      toast.success('Share URL copied to clipboard.', 'Share link ready')
+    } catch (err) {
+      toast.error(err.message, 'Could not create share link')
+    } finally {
+      setSharingId('')
+    }
+  }
+
   return (
     <div className="history-page space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -125,6 +165,8 @@ export default function History() {
                 key={item.id}
                 item={item}
                 loading={loadingId === item.id}
+                sharing={sharingId === item.id}
+                onShare={() => shareText(item)}
                 onRegenerate={() => regenerateText(item)}
                 onDelete={() => deleteText(item.id)}
               />
@@ -143,6 +185,8 @@ export default function History() {
                 key={item.id}
                 item={item}
                 loading={loadingId === item.id}
+                sharing={sharingId === item.id}
+                onShare={() => shareImage(item)}
                 onRegenerate={() => regenerateImage(item)}
                 onDelete={() => deleteImage(item.id)}
               />
@@ -172,7 +216,7 @@ function HistorySection({ icon: Icon, title, count, children }) {
   )
 }
 
-function TextHistoryCard({ item, loading, onRegenerate, onDelete }) {
+function TextHistoryCard({ item, loading, sharing, onShare, onRegenerate, onDelete }) {
   return (
     <article className="history-card">
       <div>
@@ -180,12 +224,12 @@ function TextHistoryCard({ item, loading, onRegenerate, onDelete }) {
         <p className="history-response">{item.response || item.text}</p>
       </div>
       <HistoryMeta item={item} />
-      <HistoryActions value={item.response || item.text || ''} loading={loading} onRegenerate={onRegenerate} onDelete={onDelete} />
+      <HistoryActions value={item.response || item.text || ''} loading={loading} sharing={sharing} onShare={onShare} onRegenerate={onRegenerate} onDelete={onDelete} />
     </article>
   )
 }
 
-function ImageHistoryCard({ item, loading, onRegenerate, onDelete }) {
+function ImageHistoryCard({ item, loading, sharing, onShare, onRegenerate, onDelete }) {
   return (
     <article className="history-card history-image-card">
       <img src={item.output_url} alt={item.prompt} />
@@ -194,7 +238,7 @@ function ImageHistoryCard({ item, loading, onRegenerate, onDelete }) {
         <p className="history-response">{item.size || '1024x1024'} / {item.style || 'auto'} / {item.quality || 'auto'}</p>
       </div>
       <HistoryMeta item={item} />
-      <HistoryActions value={item.output_url || ''} loading={loading} onRegenerate={onRegenerate} onDelete={onDelete} />
+      <HistoryActions value={item.output_url || ''} loading={loading} sharing={sharing} onShare={onShare} onRegenerate={onRegenerate} onDelete={onDelete} />
     </article>
   )
 }
@@ -207,11 +251,14 @@ function HistoryMeta({ item }) {
   )
 }
 
-function HistoryActions({ value, loading, onRegenerate, onDelete }) {
+function HistoryActions({ value, loading, sharing, onShare, onRegenerate, onDelete }) {
   return (
     <div className="history-actions">
       <button type="button" onClick={() => navigator.clipboard?.writeText(value)} aria-label="Copy result">
         <Copy className="h-4 w-4" />
+      </button>
+      <button type="button" onClick={onShare} disabled={sharing} aria-label="Create share link">
+        <Share2 className={`h-4 w-4 ${sharing ? 'animate-pulse' : ''}`} />
       </button>
       <button type="button" onClick={onRegenerate} disabled={loading} aria-label="Regenerate">
         <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />

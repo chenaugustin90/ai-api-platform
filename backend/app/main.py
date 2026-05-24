@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import get_settings
 from app.db.init_db import init_db
 from app.providers.utils import effective_allow_mock_providers, log_provider_configuration, provider_diagnostics, provider_key_status
-from app.routes import api_keys, auth, billing, dashboard, generate, providers, usage
+from app.routes import api_keys, auth, billing, dashboard, generate, providers, shares, usage
 
 settings = get_settings()
 
@@ -64,6 +64,8 @@ app.include_router(auth.router)
 app.include_router(api_keys.router, prefix="/api")
 app.include_router(generate.router, prefix="/api")
 app.include_router(providers.router, prefix="/api")
+app.include_router(shares.api_router, prefix="/api")
+app.include_router(shares.public_router)
 app.include_router(usage.router, prefix="/api")
 app.include_router(dashboard.router, prefix="/api")
 app.include_router(billing.router, prefix="/api")

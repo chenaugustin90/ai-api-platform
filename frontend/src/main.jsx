@@ -21,6 +21,7 @@ import ProviderSettings from './pages/ProviderSettings'
 import PromptLibrary from './pages/PromptLibrary'
 import Pricing from './pages/Pricing'
 import Register from './pages/Register'
+import SharedPreview from './pages/SharedPreview'
 import Upgrade from './pages/Upgrade'
 import Usage from './pages/Usage'
 import VideoGeneration from './pages/VideoGeneration'
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
+  { path: '/share/:id', element: <SharedPreview /> },
   {
     element: (
       <ProtectedRoute>

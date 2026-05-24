@@ -1,11 +1,13 @@
-import { Copy, Download, Expand, Heart, RefreshCw, Sparkles, Trash2, Wand2 } from 'lucide-react'
+import { Copy, Download, Expand, Heart, RefreshCw, Share2, Sparkles, Trash2, Wand2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import AiLoading from '../components/AiLoading'
 import EmptyState from '../components/EmptyState'
 import PromptHistory, { saveRecentPrompt } from '../components/PromptHistory'
+import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
 import { IMAGE_HISTORY_LIMIT, deleteImageHistory, loadImageHistory, saveImageHistory } from '../utils/generationHistory'
+import { createShareLink } from '../utils/share'
 
 const IMAGE_PROMPT_HISTORY_KEY = 'image_prompt_history'
 const IMAGE_EXAMPLES = [
@@ -48,6 +50,7 @@ const STYLE_PROMPTS = {
 }
 
 export default function ImageGeneration() {
+  const toast = useToast()
   const [form, setForm] = useState({ provider: 'openai', model: 'gpt-image-2', prompt: '', size: '1024x1024', style: 'auto', count: '1', quality: 'auto' })
   const [images, setImages] = useState([])
   const [error, setError] = useState('')
@@ -197,6 +200,20 @@ export default function ImageGeneration() {
               <ImageCard
                 key={`${image.id}-${index}`}
                 image={image}
+                onShare={async () => {
+                  try {
+                    await createShareLink({
+                      modality: 'image',
+                      prompt: image.prompt,
+                      output_url: image.output_url,
+                      provider: image.provider,
+                      model: image.model
+                    })
+                    toast.success('Share URL copied to clipboard.', 'Share link ready')
+                  } catch (err) {
+                    toast.error(err.message, 'Could not create share link')
+                  }
+                }}
                 onRegenerate={() => generate(image.prompt, { ...image, count: '1' })}
                 onDelete={() => deleteImage(image.id)}
               />
@@ -208,9 +225,10 @@ export default function ImageGeneration() {
   )
 }
 
-function ImageCard({ image, onRegenerate, onDelete }) {
+function ImageCard({ image, onShare, onRegenerate, onDelete }) {
   const [favorite, setFavorite] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState(false)
+  const [sharing, setSharing] = useState(false)
 
   async function copyImageUrl() {
     if (!image.output_url) return
@@ -221,6 +239,16 @@ function ImageCard({ image, onRegenerate, onDelete }) {
 
   function fullscreen() {
     if (image.output_url) window.open(image.output_url, '_blank', 'noopener,noreferrer')
+  }
+
+  async function shareImage() {
+    if (!image.output_url) return
+    setSharing(true)
+    try {
+      await onShare()
+    } finally {
+      setSharing(false)
+    }
   }
 
   return (
@@ -250,6 +278,9 @@ function ImageCard({ image, onRegenerate, onDelete }) {
           )}
           <GlassButton variant="ghost" size="icon" className={`image-action ${copiedUrl ? 'is-active' : ''}`} type="button" onClick={copyImageUrl} disabled={!image.output_url} aria-label="Copy image URL">
             <Copy className="h-4 w-4" />
+          </GlassButton>
+          <GlassButton variant="ghost" size="icon" className={`image-action ${sharing ? 'is-active' : ''}`} type="button" onClick={shareImage} disabled={!image.output_url || sharing} aria-label="Create share link">
+            <Share2 className={`h-4 w-4 ${sharing ? 'animate-pulse' : ''}`} />
           </GlassButton>
           <GlassButton variant="ghost" size="icon" className="image-action" type="button" onClick={fullscreen} disabled={!image.output_url} aria-label="Open fullscreen">
             <Expand className="h-4 w-4" />

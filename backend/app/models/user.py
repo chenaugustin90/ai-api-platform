@@ -28,3 +28,4 @@ class User(Base):
     api_keys = relationship("ApiKey", back_populates="user", cascade="all, delete-orphan")
     usage_events = relationship("UsageEvent", back_populates="user", cascade="all, delete-orphan")
     generations = relationship("Generation", back_populates="user", cascade="all, delete-orphan")
+    shares = relationship("Share", back_populates="user", cascade="all, delete-orphan")

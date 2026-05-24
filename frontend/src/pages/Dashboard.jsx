@@ -5,9 +5,10 @@ import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
-import { AlertTriangle, BookOpen, CalendarClock, Check, Clock3, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, KeyRound, Play, RotateCcw, Settings, Sparkles, SquareTerminal, TerminalSquare, Video, Wand2, X, Zap } from 'lucide-react'
+import { AlertTriangle, BookOpen, CalendarClock, Check, Clock3, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, KeyRound, Play, RotateCcw, Settings, Share2, Sparkles, SquareTerminal, TerminalSquare, Video, Wand2, X, Zap } from 'lucide-react'
 import { addImagesToHistory, saveTextGenerationHistory } from '../utils/generationHistory'
 import { savePromptToLibrary, saveRecentPromptGlobal } from '../utils/promptLibrary'
+import { createShareLink } from '../utils/share'
 
 const DASHBOARD_EXAMPLES = [
   'Generate a glassmorphic AI product image',
@@ -218,6 +219,23 @@ export default function Dashboard() {
     toast.success('Result copied.')
   }
 
+  async function shareResult() {
+    if (!generationResult) return
+    try {
+      await createShareLink({
+        modality: generationResult.endpoint === 'image' ? 'image' : 'text',
+        prompt: generationResult.prompt,
+        text: generationResult.text,
+        output_url: generationResult.output_url,
+        provider: generationResult.provider,
+        model: generationResult.model
+      })
+      toast.success('Share URL copied to clipboard.', 'Share link ready')
+    } catch (err) {
+      toast.error(err.message, 'Could not create share link')
+    }
+  }
+
   function favoritePrompt() {
     savePromptToLibrary(generator.prompt, { favorite: true })
     toast.success('Prompt saved to library.')
@@ -266,6 +284,7 @@ export default function Dashboard() {
         onCancel={cancelGeneration}
         onRetry={retryGeneration}
         onCopy={copyResult}
+        onShare={shareResult}
         onFavoritePrompt={favoritePrompt}
       />
       <QuickActions />
@@ -567,7 +586,7 @@ async function sendDashboardGeneration(path, payload, signal) {
   })
 }
 
-function DashboardGenerator({ generator, history, error, loading, progress, result, streamedText, onChange, onSubmit, onCancel, onRetry, onCopy, onFavoritePrompt }) {
+function DashboardGenerator({ generator, history, error, loading, progress, result, streamedText, onChange, onSubmit, onCancel, onRetry, onCopy, onShare, onFavoritePrompt }) {
   const config = GENERATOR_CONFIG[generator.endpoint]
   const modelOptions = config.models[generator.provider] || []
   const statusLabel = loading ? progress < 35 ? 'Preparing request' : progress < 75 ? 'Provider thinking' : 'Finalizing output' : progress === 100 ? 'Completed' : `${config.credits} credits`
@@ -656,6 +675,7 @@ function DashboardGenerator({ generator, history, error, loading, progress, resu
             <div className="generation-result-actions">
               <button type="button" onClick={onFavoritePrompt} aria-label="Favorite prompt"><Heart className="h-4 w-4" /></button>
               <button type="button" onClick={onCopy} aria-label="Copy result"><Copy className="h-4 w-4" /></button>
+              <button type="button" onClick={onShare} aria-label="Create share link"><Share2 className="h-4 w-4" /></button>
               <button type="button" onClick={onRetry} aria-label="Retry generation"><RotateCcw className="h-4 w-4" /></button>
             </div>
           </div>
@@ -795,7 +815,28 @@ function Metric({ label, value }) {
 }
 
 function TextHistory({ title, items }) {
+  const toast = useToast()
   const visibleItems = items.slice(0, 8)
+
+  async function shareText(item) {
+    const text = item.text || item.response
+    if (!text) {
+      toast.info('This saved dashboard row does not include a text response yet.')
+      return
+    }
+    try {
+      await createShareLink({
+        modality: 'text',
+        prompt: item.prompt,
+        text,
+        provider: item.provider,
+        model: item.model
+      })
+      toast.success('Share URL copied to clipboard.', 'Share link ready')
+    } catch (err) {
+      toast.error(err.message, 'Could not create share link')
+    }
+  }
 
   return (
     <GlassCard as="section" className="p-5">
@@ -810,7 +851,9 @@ function TextHistory({ title, items }) {
                 <p className="line-clamp-2 text-sm font-semibold text-white">{item.text || item.prompt}</p>
                 <p className="mt-1 text-xs text-[#A1A1AA]">{item.provider} / {item.model}</p>
               </div>
-              <span>{item.status || 'completed'}</span>
+              <button type="button" className="media-action" onClick={() => shareText(item)} aria-label="Create share link">
+                <Share2 className="h-4 w-4" />
+              </button>
             </article>
           ))}
         </div>
@@ -837,7 +880,9 @@ function Gallery({ title, items, type }) {
 }
 
 function GeneratedMediaCard({ item, type }) {
+  const toast = useToast()
   const [favorite, setFavorite] = useState(false)
+  const [sharing, setSharing] = useState(false)
   const hasMedia = type === 'image' && item.output_url
   const PlaceholderIcon = type === 'image' ? Image : Video
 
@@ -847,6 +892,25 @@ function GeneratedMediaCard({ item, type }) {
 
   function fullscreen() {
     if (item.output_url) window.open(item.output_url, '_blank', 'noopener,noreferrer')
+  }
+
+  async function shareMedia() {
+    if (!hasMedia) return
+    setSharing(true)
+    try {
+      await createShareLink({
+        modality: 'image',
+        prompt: item.prompt,
+        output_url: item.output_url,
+        provider: item.provider,
+        model: item.model
+      })
+      toast.success('Share URL copied to clipboard.', 'Share link ready')
+    } catch (err) {
+      toast.error(err.message, 'Could not create share link')
+    } finally {
+      setSharing(false)
+    }
   }
 
   return (
@@ -872,6 +936,9 @@ function GeneratedMediaCard({ item, type }) {
             )}
             <button type="button" className="media-action" onClick={copyPrompt} aria-label="Copy prompt">
               <Copy className="h-4 w-4" />
+            </button>
+            <button type="button" className={`media-action ${sharing ? 'is-active' : ''}`} onClick={shareMedia} aria-label="Create share link" disabled={!hasMedia || sharing}>
+              <Share2 className="h-4 w-4" />
             </button>
             <button type="button" className="media-action" onClick={fullscreen} aria-label="Fullscreen" disabled={!item.output_url}>
               <Expand className="h-4 w-4" />
