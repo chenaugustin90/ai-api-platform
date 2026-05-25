@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from urllib.parse import urlparse
 
-from app.core.config import Settings
-from app.providers.utils import provider_diagnostics
+from app.core.config import Settings, is_hosted_runtime
+from app.providers.utils import effective_allow_mock_providers, provider_diagnostics
 
 REQUIRED_PAYMENT_CONFIG = (
     "FRONTEND_URL",
@@ -82,9 +82,12 @@ def production_diagnostics(settings: Settings) -> dict:
 
 def _runtime_status(settings: Settings) -> dict:
     missing = []
-    if settings.app_env.lower() != "production":
+    hosted_runtime = is_hosted_runtime()
+    effective_mock = effective_allow_mock_providers()
+    effective_app_env = "production" if settings.app_env.lower() == "production" or hosted_runtime else settings.app_env
+    if effective_app_env.lower() != "production":
         missing.append("APP_ENV")
-    if settings.allow_mock_providers:
+    if effective_mock:
         missing.append("ALLOW_MOCK_PROVIDERS")
     if settings.allow_mock_subscriptions:
         missing.append("ALLOW_MOCK_SUBSCRIPTIONS")
@@ -92,7 +95,10 @@ def _runtime_status(settings: Settings) -> dict:
     return {
         "ready": not missing,
         "app_env": settings.app_env,
+        "effective_app_env": effective_app_env,
+        "hosted_runtime": hosted_runtime,
         "allow_mock_providers": settings.allow_mock_providers,
+        "effective_allow_mock_providers": effective_mock,
         "allow_mock_subscriptions": settings.allow_mock_subscriptions,
         "missing": missing,
         "message": "Runtime is locked for production." if not missing else "Runtime is still using development or mock-safe settings.",
