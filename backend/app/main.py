@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 
 from app.core.config import get_settings
+from app.core.production import production_diagnostics
 from app.db.init_db import init_db
 from app.providers.utils import effective_allow_mock_providers, log_provider_configuration, provider_diagnostics, provider_key_status
 from app.routes import api_keys, auth, billing, dashboard, generate, providers, shares, usage
@@ -57,6 +58,11 @@ def provider_health():
         "providers": providers,
         "legacy_status": provider_key_status(),
     }
+
+
+@app.get("/health/production")
+def production_health():
+    return production_diagnostics(settings)
 
 
 @app.get("/.well-known")

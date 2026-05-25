@@ -2576,6 +2576,132 @@ body.theme-light .upgrade-metric-row strong {
   gap: 1rem;
 }
 
+.production-readiness-card {
+  display: grid;
+  gap: 1rem;
+  border-color: rgba(0, 229, 255, 0.18);
+  background:
+    radial-gradient(22rem 13rem at 8% 0%, rgba(0, 229, 255, 0.12), transparent 70%),
+    radial-gradient(18rem 12rem at 86% 12%, rgba(139, 92, 246, 0.12), transparent 70%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.035)),
+    rgba(10, 16, 31, 0.58);
+}
+
+.production-readiness-card.needs-attention {
+  border-color: rgba(251, 191, 36, 0.25);
+}
+
+.production-readiness-card.is-ready {
+  border-color: rgba(74, 222, 128, 0.24);
+}
+
+.production-readiness-head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.production-readiness-icon,
+.production-check-top span {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(190, 250, 255, 0.18);
+  border-radius: 999px;
+  color: #00e5ff;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.18), 0 0 24px rgba(0, 229, 255, 0.08);
+}
+
+.production-readiness-icon {
+  width: 3rem;
+  height: 3rem;
+}
+
+.production-check-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 0.75rem;
+}
+
+.production-check {
+  display: grid;
+  gap: 0.7rem;
+  min-width: 0;
+  border: 1px solid rgba(190, 250, 255, 0.12);
+  border-radius: 22px;
+  padding: 1rem;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.03)),
+    rgba(255, 255, 255, 0.045);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.production-check.is-ready {
+  border-color: rgba(74, 222, 128, 0.22);
+}
+
+.production-check.needs-attention,
+.production-check.is-warning {
+  border-color: rgba(251, 191, 36, 0.24);
+}
+
+.production-check-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+  color: #f8fafc;
+}
+
+.production-check-top span {
+  width: 2rem;
+  height: 2rem;
+}
+
+.production-check-top > svg {
+  color: #4ade80;
+}
+
+.production-check.needs-attention .production-check-top > svg,
+.production-check.is-warning .production-check-top > svg {
+  color: #fbbf24;
+}
+
+.production-check strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.production-check p,
+.production-check small {
+  color: #cbd5e1;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.production-check small {
+  color: #94a3b8;
+}
+
+.production-missing-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.production-missing-list span {
+  border: 1px solid rgba(251, 191, 36, 0.24);
+  border-radius: 999px;
+  padding: 0.3rem 0.48rem;
+  color: #fde68a;
+  font-size: 0.66rem;
+  font-weight: 850;
+  background: rgba(251, 191, 36, 0.09);
+}
+
 .provider-warning-card {
   display: grid;
   align-items: center;
@@ -4974,6 +5100,14 @@ body.theme-light .upgrade-metric-row strong {
     align-items: flex-start;
   }
 
+  .production-readiness-head {
+    display: grid;
+  }
+
+  .production-check-grid {
+    grid-template-columns: 1fr;
+  }
+
   .quick-action-card,
   .recent-generation-item {
     min-height: 60px;
@@ -6348,6 +6482,8 @@ body.theme-light .provider-runtime-metric strong,
 body.theme-light .provider-test-result strong,
 body.theme-light .provider-test-result span,
 body.theme-light .quick-action-card strong,
+body.theme-light .production-check-top,
+body.theme-light .production-check strong,
 body.theme-light .dashboard-metric-number,
 body.theme-light .generation-stream-text,
 body.theme-light .docs-code-toolbar button,
@@ -6377,6 +6513,8 @@ body.theme-light .billing-history-row p,
 body.theme-light .billing-history-amount span,
 body.theme-light .dashboard-metric-label,
 body.theme-light .provider-runtime-metric span,
+body.theme-light .production-check p,
+body.theme-light .production-check small,
 body.theme-light .provider-setup-list,
 body.theme-light .provider-test-result p,
 body.theme-light .playground-editor-label,
@@ -6469,7 +6607,9 @@ body.theme-light button:disabled {
 
 body.theme-light .lg-card-stat,
 body.theme-light .ai-stat-card,
-body.theme-light .dashboard-metric {
+body.theme-light .dashboard-metric,
+body.theme-light .production-readiness-card,
+body.theme-light .production-check {
   border-color: rgba(29, 29, 31, 0.1);
   background:
     radial-gradient(18rem 14rem at 18% 8%, rgba(255, 255, 255, 0.9), transparent 62%),

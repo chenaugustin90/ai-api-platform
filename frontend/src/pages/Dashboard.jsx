@@ -5,7 +5,7 @@ import EmptyState from '../components/EmptyState'
 import { useToast } from '../components/ToastProvider'
 import { GlassButton, GlassCard, GlassSelect, GlassTextarea } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
-import { AlertTriangle, BookOpen, CalendarClock, Check, Clock3, Copy, CreditCard, Download, Expand, ExternalLink, Heart, Image, KeyRound, Play, RotateCcw, Settings, Share2, Sparkles, SquareTerminal, TerminalSquare, Video, Wand2, X, Zap } from 'lucide-react'
+import { AlertTriangle, BookOpen, CalendarClock, Check, CheckCircle2, Clock3, Copy, CreditCard, Database, Download, Expand, ExternalLink, Heart, Image, KeyRound, Play, RotateCcw, Settings, Share2, ShieldCheck, Sparkles, SquareTerminal, TerminalSquare, Video, Wand2, X, Zap } from 'lucide-react'
 import { addImagesToHistory, saveTextGenerationHistory } from '../utils/generationHistory'
 import { savePromptToLibrary, saveRecentPromptGlobal } from '../utils/promptLibrary'
 import { createShareLink } from '../utils/share'
@@ -273,6 +273,7 @@ export default function Dashboard() {
         />
       )}
       <DashboardHero user={user} usage={usage} billing={data.billing} recentGenerations={recentGenerations} />
+      {data.production && <ProductionReadiness production={data.production} />}
       {data.billing && !data.billing.payment_configured && <BillingSetupWarning missing={data.billing.missing_payment_config || []} />}
       {missingProviders.length > 0 && <ProviderWarning missingProviders={missingProviders} />}
       <DashboardGenerator
@@ -317,6 +318,60 @@ export default function Dashboard() {
       <Gallery title="Generated images" items={generatedImages} type="image" />
       <Gallery title="Generated videos" items={generatedVideos} type="video" />
     </div>
+  )
+}
+
+function ProductionReadiness({ production }) {
+  const checks = production.checks || []
+  const needsAttention = checks.filter((check) => check.status !== 'ready')
+  const visibleChecks = needsAttention.length ? needsAttention : checks
+  const statusLabel = production.ready ? 'Production ready' : `${needsAttention.length} checks need attention`
+
+  return (
+    <GlassCard as="section" className={`production-readiness-card p-5 ${production.ready ? 'is-ready' : 'needs-attention'}`}>
+      <div className="production-readiness-head">
+        <div className="flex items-start gap-3">
+          <span className="production-readiness-icon">
+            {production.ready ? <ShieldCheck className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
+          </span>
+          <div>
+            <p className="eyebrow mb-1">Production readiness</p>
+            <h2 className="text-xl font-bold text-white">{statusLabel}</h2>
+            <p className="muted mt-1 text-sm">Environment, storage, payments, and provider routing are checked without exposing secrets.</p>
+          </div>
+        </div>
+        <GlassButton as={Link} to="/settings/providers" variant="secondary">
+          <Settings className="h-4 w-4" />
+          Review setup
+        </GlassButton>
+      </div>
+      <div className="production-check-grid">
+        {visibleChecks.map((check) => (
+          <ProductionCheck key={check.id} check={check} />
+        ))}
+      </div>
+    </GlassCard>
+  )
+}
+
+function ProductionCheck({ check }) {
+  const Icon = check.id === 'database' ? Database : check.id === 'payments' ? CreditCard : check.id === 'providers' ? Sparkles : ShieldCheck
+  const ready = check.status === 'ready'
+  return (
+    <article className={`production-check ${ready ? 'is-ready' : check.status === 'warning' ? 'is-warning' : 'needs-attention'}`}>
+      <div className="production-check-top">
+        <span><Icon className="h-4 w-4" /></span>
+        <strong>{check.label}</strong>
+        {ready ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+      </div>
+      <p>{check.message}</p>
+      {check.missing?.length > 0 && (
+        <div className="production-missing-list">
+          {check.missing.map((item) => <span key={item}>{item}</span>)}
+        </div>
+      )}
+      <small>{check.action}</small>
+    </article>
   )
 }
 

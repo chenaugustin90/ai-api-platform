@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_current_user
+from app.core.config import get_settings
+from app.core.production import production_diagnostics
 from app.db.session import get_db
 from app.models import Generation, User
 from app.providers.utils import provider_key_status
@@ -11,6 +13,7 @@ from app.routes.billing import _missing_stripe_config
 from app.services.usage import usage_summary
 
 router = APIRouter(prefix="/dashboard", tags=["dashboard"])
+settings = get_settings()
 
 
 @router.get("")
@@ -53,6 +56,7 @@ def dashboard(user: User = Depends(get_current_user), db: Session = Depends(get_
         "usage": usage_summary(db, user),
         "billing": billing,
         "provider_status": provider_key_status(),
+        "production": production_diagnostics(settings),
         "generated_text": text_generations,
         "generated_images": images,
         "generated_videos": videos,
