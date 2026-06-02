@@ -4,6 +4,12 @@ import { API_URL, api, apiKeyRequest, getToken } from '../api/client'
 import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
 import { saveTextGenerationHistory } from '../utils/generationHistory'
 
+const MODEL_CHOICES = [
+  { id: 'gpt-4o-mini', label: 'GPT-4o', provider: 'openai', model: 'gpt-4o-mini' },
+  { id: 'claude', label: 'Claude', provider: 'claude', model: 'claude-haiku-4-5' },
+  { id: 'deepseek', label: 'DeepSeek', provider: 'deepseek', model: 'deepseek-chat' }
+]
+
 const ENDPOINTS = {
   text: {
     label: 'Text generation',
@@ -32,8 +38,10 @@ export default function Playground() {
   const [endpoint, setEndpoint] = useState('text')
   const config = ENDPOINTS[endpoint]
   const [authMode, setAuthMode] = useState('chat')
+  const [selectedModel, setSelectedModel] = useState(MODEL_CHOICES[0].id)
   const [provider, setProvider] = useState(config.providers[0])
-  const [model, setModel] = useState('')
+  const [model, setModel] = useState(MODEL_CHOICES[0].model)
+  const [prompt, setPrompt] = useState(config.defaults.prompt)
   const [apiKey, setApiKey] = useState('')
   const [requestText, setRequestText] = useState(formatJson(buildPayload(endpoint, config.providers[0], '', config.defaults)))
   const [response, setResponse] = useState(null)
@@ -42,12 +50,15 @@ export default function Playground() {
   const [creditsUsed, setCreditsUsed] = useState(null)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState('')
+  const [advancedOpen, setAdvancedOpen] = useState(false)
 
   useEffect(() => {
     const nextConfig = ENDPOINTS[endpoint]
     const nextProvider = nextConfig.providers[0]
     setProvider(nextProvider)
-    setModel('')
+    setModel(endpoint === 'text' ? MODEL_CHOICES[0].model : '')
+    setSelectedModel(endpoint === 'text' ? MODEL_CHOICES[0].id : '')
+    setPrompt(nextConfig.defaults.prompt)
     setResponse(null)
     setError('')
     setResponseTime(null)
@@ -59,12 +70,20 @@ export default function Playground() {
     setRequestText((current) => {
       try {
         const parsed = JSON.parse(current)
-        return formatJson({ ...parsed, provider, model: model.trim() || null })
+        return formatJson({ ...parsed, provider, model: model.trim() || null, prompt })
       } catch {
         return current
       }
     })
-  }, [provider, model])
+  }, [provider, model, prompt])
+
+  function chooseModel(choiceId) {
+    const choice = MODEL_CHOICES.find((item) => item.id === choiceId) || MODEL_CHOICES[0]
+    setEndpoint('text')
+    setSelectedModel(choice.id)
+    setProvider(choice.provider)
+    setModel(choice.model)
+  }
 
   const parsedRequest = useMemo(() => {
     try {
@@ -139,66 +158,91 @@ export default function Playground() {
   }
 
   return (
-    <div className="playground-page space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="playground-page minimal-playground space-y-6">
+      <div className="flex flex-col gap-4 lg:items-center lg:text-center">
         <div>
-          <p className="eyebrow mb-2">API Lab</p>
-          <h1 className="title-gradient text-3xl font-bold sm:text-4xl md:text-5xl">Playground</h1>
-          <p className="muted mt-3 max-w-2xl text-sm">Compose real platform requests, inspect JSON responses, and lift production-ready snippets.</p>
-        </div>
-        <div className="playground-signal">
-          <Sparkles className="h-4 w-4" />
-          Live metered route
+          <p className="eyebrow mb-2">Chat</p>
+          <h1 className="title-gradient text-4xl font-bold sm:text-5xl md:text-6xl">Prompt the API.</h1>
+          <p className="muted mx-auto mt-3 max-w-2xl text-sm">Start simple. Advanced request details stay out of the way until you need them.</p>
         </div>
       </div>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.72fr)]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.62fr)]">
         <GlassCard as="form" className="playground-console" onSubmit={sendRequest}>
           <div className="playground-toolbar">
             <div className="flex items-center gap-2 text-sm font-semibold text-white">
               <span className="composer-spark"><TerminalSquare className="h-4 w-4" /></span>
-              Request console
+              Prompt
             </div>
-            <span className="lg-pill text-xs">{config.path}</span>
-          </div>
-
-          <div className="playground-mode-toggle" role="tablist" aria-label="Playground authentication mode">
-            <button type="button" role="tab" aria-selected={authMode === 'chat'} className={authMode === 'chat' ? 'is-active' : ''} onClick={() => setAuthMode('chat')}>
-              Chat Mode
-            </button>
-            <button type="button" role="tab" aria-selected={authMode === 'developer'} className={authMode === 'developer' ? 'is-active' : ''} onClick={() => setAuthMode('developer')}>
-              Developer API Mode
+            <button className="advanced-toggle" type="button" onClick={() => setAdvancedOpen((current) => !current)}>
+              {advancedOpen ? 'Hide Advanced' : 'Advanced'}
             </button>
           </div>
-          <p className="playground-auth-note">
-            {authMode === 'chat'
-              ? 'Uses your logged-in session automatically. No API key required.'
-              : 'Sends requests exactly like an external developer using X-API-Key.'}
-          </p>
 
-          <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.9fr)]">
-            <GlassSelect value={endpoint} options={endpointOptions()} onChange={(event) => setEndpoint(event.target.value)} />
-            <GlassSelect value={provider} options={config.providers} onChange={(event) => setProvider(event.target.value)} />
-            <GlassInput placeholder="Model override" value={model} onChange={(event) => setModel(event.target.value)} />
-          </div>
-
-          {authMode === 'developer' && (
-            <GlassInput
-              placeholder="Developer API key, e.g. ai_..."
-              value={apiKey}
-              onChange={(event) => setApiKey(event.target.value)}
-            />
-          )}
-
-          <label className="playground-editor-label" htmlFor="playground-request">Prompt / request body</label>
           <GlassTextarea
-            id="playground-request"
-            className="playground-editor"
-            spellCheck="false"
-            wrap="soft"
-            value={requestText}
-            onChange={(event) => setRequestText(event.target.value)}
+            className="playground-editor minimal-prompt-editor"
+            value={prompt}
+            onChange={(event) => setPrompt(event.target.value)}
+            placeholder="Ask for launch copy, API docs, image prompt ideas, provider routing logic..."
           />
+
+          <div className="minimal-model-section">
+            <p className="eyebrow">Model</p>
+            <div className="minimal-model-grid" role="radiogroup" aria-label="Model">
+              {MODEL_CHOICES.map((choice) => (
+                <button
+                  key={choice.id}
+                  type="button"
+                  className={selectedModel === choice.id ? 'is-active' : ''}
+                  onClick={() => chooseModel(choice.id)}
+                >
+                  {choice.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {advancedOpen && (
+            <div className="playground-advanced-panel">
+              <div className="playground-mode-toggle" role="tablist" aria-label="Playground authentication mode">
+                <button type="button" role="tab" aria-selected={authMode === 'chat'} className={authMode === 'chat' ? 'is-active' : ''} onClick={() => setAuthMode('chat')}>
+                  Chat Mode
+                </button>
+                <button type="button" role="tab" aria-selected={authMode === 'developer'} className={authMode === 'developer' ? 'is-active' : ''} onClick={() => setAuthMode('developer')}>
+                  Developer API Mode
+                </button>
+              </div>
+              <p className="playground-auth-note">
+                {authMode === 'chat'
+                  ? 'Uses your logged-in session automatically. No API key required.'
+                  : 'Sends requests exactly like an external developer using X-API-Key.'}
+              </p>
+
+              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.9fr)]">
+                <GlassSelect value={endpoint} options={endpointOptions()} onChange={(event) => setEndpoint(event.target.value)} />
+                <GlassSelect value={provider} options={config.providers} onChange={(event) => setProvider(event.target.value)} />
+                <GlassInput placeholder="Model override" value={model} onChange={(event) => setModel(event.target.value)} />
+              </div>
+
+              {authMode === 'developer' && (
+                <GlassInput
+                  placeholder="Developer API key, e.g. ai_..."
+                  value={apiKey}
+                  onChange={(event) => setApiKey(event.target.value)}
+                />
+              )}
+
+              <label className="playground-editor-label" htmlFor="playground-request">Request JSON</label>
+              <GlassTextarea
+                id="playground-request"
+                className="playground-editor"
+                spellCheck="false"
+                wrap="soft"
+                value={requestText}
+                onChange={(event) => setRequestText(event.target.value)}
+              />
+            </div>
+          )}
 
           <div className="sticky-action-row flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap gap-2">
@@ -207,7 +251,7 @@ export default function Playground() {
             </div>
             <GlassButton type="submit" disabled={loading || !parsedRequest}>
               <Play className="h-4 w-4" />
-              {loading ? 'Sending' : 'Send request'}
+              {loading ? 'Generating' : 'Generate'}
             </GlassButton>
           </div>
           {!parsedRequest && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">Invalid JSON in request editor.</p>}
@@ -232,7 +276,7 @@ export default function Playground() {
             <pre className="playground-json">{formatJson(response || { status: 'Send a request to inspect the response.' })}</pre>
           </GlassCard>
 
-          <GlassCard className="p-5">
+          <GlassCard className={`p-5 ${advancedOpen ? '' : 'hidden xl:block'}`}>
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
               <span className="composer-spark"><Code2 className="h-4 w-4" /></span>
               Copy snippets

@@ -6,6 +6,7 @@
   },
   "nav": {
     "dashboard": "控制台",
+    "chat": "聊天",
     "playground": "AI 实验室",
     "images": "图片",
     "videos": "视频",
@@ -17,6 +18,7 @@
     "apiDocs": "API 文档",
     "usage": "使用统计",
     "aiProviders": "AI 提供商",
+    "settings": "设置",
     "account": "账户中心",
     "logout": "退出登录",
     "credits": "积分"

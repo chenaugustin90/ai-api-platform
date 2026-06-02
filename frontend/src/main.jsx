@@ -26,6 +26,7 @@ import PaymentCancel from './pages/PaymentCancel'
 import PaymentSuccess from './pages/PaymentSuccess'
 import Register from './pages/Register'
 import SharedPreview from './pages/SharedPreview'
+import Settings from './pages/Settings'
 import Upgrade from './pages/Upgrade'
 import Usage from './pages/Usage'
 import VideoGeneration from './pages/VideoGeneration'
@@ -39,6 +40,7 @@ const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
+  { path: '/docs', element: <Docs /> },
   { path: '/share/:id', element: <SharedPreview /> },
   {
     element: (
@@ -61,6 +63,7 @@ const router = createBrowserRouter([
       { path: '/images', element: <ImageGeneration /> },
       { path: '/videos', element: <VideoGeneration /> },
       { path: '/usage', element: <Usage /> },
+      { path: '/settings', element: <Settings /> },
       { path: '/settings/providers', element: <ProviderSettings /> }
     ]
   }

@@ -261,11 +261,9 @@ export default function Dashboard() {
   const generatedImages = data.generated_images || []
   const generatedVideos = data.generated_videos || []
   const hasGenerations = generatedText.length + generatedImages.length + generatedVideos.length > 0
-  const missingProviders = getMissingProviders(data.provider_status)
   const recentGenerations = buildRecentGenerations(generatorHistory, generatedText, generatedImages, generatedVideos)
-  const chartData = buildUsageChartData(usageEvents, chartPeriod)
   return (
-    <div className="space-y-6">
+    <div className="minimal-dashboard space-y-8">
       {showCheckoutSuccess && (
         <CheckoutSuccess
           tier={searchParams.get('tier') || data?.billing?.subscription_tier}
@@ -273,50 +271,53 @@ export default function Dashboard() {
         />
       )}
       <DashboardHero user={user} usage={usage} billing={data.billing} recentGenerations={recentGenerations} />
-      {data.production && <ProductionReadiness production={data.production} />}
-      {data.billing && !data.billing.payment_configured && <BillingSetupWarning missing={data.billing.missing_payment_config || []} />}
-      {missingProviders.length > 0 && <ProviderWarning missingProviders={missingProviders} />}
-      <DashboardGenerator
-        generator={generator}
-        history={generatorHistory}
-        error={generatorError}
-        loading={generatorLoading}
-        progress={generationProgress}
-        result={generationResult}
-        streamedText={streamedText}
-        onChange={updateGenerator}
-        onSubmit={runGeneration}
-        onCancel={cancelGeneration}
-        onRetry={retryGeneration}
-        onCopy={copyResult}
-        onShare={shareResult}
-        onFavoritePrompt={favoritePrompt}
-      />
-      <QuickActions />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-        <Metric label="Remaining credits" value={usage.credits_remaining} />
-        <Metric label="Text credits used" value={usage.by_modality.text || 0} />
-        <Metric label="Image credits used" value={usage.by_modality.image || 0} />
-      </div>
-      <div className="dashboard-insights-grid">
-        <UsageChart title="Usage chart" data={chartData} period={chartPeriod} onPeriodChange={setChartPeriod} />
-        <CreditsTrendChart creditsRemaining={usage.credits_remaining} events={usageEvents} />
-      </div>
-      {data.billing && <BillingStatus billing={data.billing} />}
-      <DashboardBillingHistory records={billingHistory} />
-      {!hasGenerations && generatorHistory.length === 0 && (
-        <EmptyState
-          title="Your AI workspace is ready"
-          description="Start a generation or jump into a recent workflow to populate the command center."
-          examples={DASHBOARD_EXAMPLES}
-          actionLabel="Generate"
-          actionHref="/images"
+      <MinimalStartActions />
+      <GlassCard className="minimal-chat-card" as="form" onSubmit={runGeneration}>
+        <p className="eyebrow mb-3">Prompt</p>
+        <GlassTextarea
+          className="minimal-chat-input"
+          value={generator.prompt}
+          onChange={(event) => updateGenerator({ prompt: event.target.value })}
+          placeholder="Describe the API, image, workflow, or developer experience you want to create..."
         />
-      )}
-      <RecentGenerations items={recentGenerations} />
-      <TextHistory title="Text generations" items={[...generatorHistory.filter((item) => item.endpoint === 'text'), ...generatedText]} />
-      <Gallery title="Generated images" items={generatedImages} type="image" />
-      <Gallery title="Generated videos" items={generatedVideos} type="video" />
+        <div className="minimal-chat-footer">
+          <span>{Number(usage.credits_remaining || 0).toLocaleString()} credits available</span>
+          <GlassButton type="submit" disabled={generatorLoading}>
+            <Play className="h-4 w-4" />
+            {generatorLoading ? 'Generating' : 'Generate Text'}
+          </GlassButton>
+        </div>
+        {(generatorLoading || generationProgress > 0) && (
+          <div className="generation-progress">
+            <div className="generation-progress-top">
+              <span>{generatorLoading ? 'Provider thinking' : 'Completed'}</span>
+              <strong>{generationProgress}%</strong>
+            </div>
+            <div className="generation-progress-track">
+              <span style={{ width: `${generationProgress}%` }} />
+            </div>
+          </div>
+        )}
+        {(generationResult || streamedText) && (
+          <div className="generation-result-panel">
+            <div className="generation-result-head">
+              <span className="provider-section-title">
+                <Sparkles className="h-3.5 w-3.5" />
+                Latest result
+              </span>
+              <div className="generation-result-actions">
+                <button type="button" onClick={favoritePrompt} aria-label="Favorite prompt"><Heart className="h-4 w-4" /></button>
+                <button type="button" onClick={copyResult} aria-label="Copy result"><Copy className="h-4 w-4" /></button>
+                <button type="button" onClick={shareResult} aria-label="Create share link"><Share2 className="h-4 w-4" /></button>
+                <button type="button" onClick={retryGeneration} aria-label="Retry generation"><RotateCcw className="h-4 w-4" /></button>
+              </div>
+            </div>
+            <p className="generation-stream-text">{streamedText}<span aria-hidden="true" /></p>
+          </div>
+        )}
+        {generatorError && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{generatorError}</p>}
+      </GlassCard>
+      {hasGenerations || generatorHistory.length > 0 ? <RecentGenerations items={recentGenerations} /> : null}
     </div>
   )
 }
@@ -397,32 +398,34 @@ function BillingSetupWarning({ missing }) {
 
 function DashboardHero({ user, usage, billing, recentGenerations }) {
   const displayName = getDisplayName(user)
-  const plan = billing?.subscription_tier || 'free'
-  const status = billing?.subscription_status || 'active'
-  const generationCount = recentGenerations.length
 
   return (
-    <section className="dashboard-hero grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-end">
+    <section className="dashboard-hero minimal-dashboard-hero">
       <div>
-        <p className="eyebrow mb-2">Command Center</p>
-        <h1 className="title-gradient dashboard-greeting text-3xl font-bold sm:text-4xl">Welcome back, {displayName}</h1>
-        <p className="muted mt-2 text-sm">Your AI workspace is ready: {Number(usage.credits_remaining || 0).toLocaleString()} credits, {Number(usage.total_events || 0).toLocaleString()} requests, and {generationCount} recent generations.</p>
-      </div>
-      <div className="dashboard-account-summary flex flex-wrap gap-2 md:justify-end" aria-label="Account summary">
-        <span className="lg-pill">
-          <strong>{Number(usage.credits_remaining || 0).toLocaleString()}</strong>
-          credits
-        </span>
-        <span className="lg-pill">
-          <strong>{plan}</strong>
-          plan
-        </span>
-        <span className="lg-pill">
-          <strong>{status}</strong>
-          status
-        </span>
+        <p className="eyebrow mb-3">Welcome Back</p>
+        <h1 className="title-gradient dashboard-greeting">What do you want to build today?</h1>
+        <p className="muted mt-4 text-sm">Hi {displayName}. Your workspace is ready with {Number(usage.credits_remaining || 0).toLocaleString()} credits.</p>
       </div>
     </section>
+  )
+}
+
+function MinimalStartActions() {
+  const actions = [
+    { label: 'Generate Text', href: '/playground', icon: SquareTerminal },
+    { label: 'Generate Image', href: '/images', icon: Image },
+    { label: 'API Keys', href: '/api-keys', icon: KeyRound },
+    { label: 'Docs', href: '/docs', icon: BookOpen }
+  ]
+  return (
+    <div className="minimal-action-grid">
+      {actions.map(({ label, href, icon: Icon }) => (
+        <GlassCard key={label} as={Link} to={href} className="minimal-action-card" data-magnetic>
+          <span><Icon className="h-5 w-5" /></span>
+          <strong>{label}</strong>
+        </GlassCard>
+      ))}
+    </div>
   )
 }
 

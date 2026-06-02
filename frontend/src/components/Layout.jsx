@@ -1,4 +1,4 @@
-import { BarChart3, BookOpen, CreditCard, FileCode2, History as HistoryIcon, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, Sparkles, SquareTerminal, UserCircle, Video, X, Zap } from 'lucide-react'
+import { BookOpen, History as HistoryIcon, Image, KeyRound, LogOut, Menu, MessageSquareText, Settings, UserCircle, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
@@ -11,18 +11,12 @@ import ThemeToggle from './ThemeToggle'
 import { GlassButton, GlassCard } from './ui'
 
 const links = [
-  ['nav.dashboard', '/dashboard', LayoutDashboard],
-  ['nav.playground', '/playground', SquareTerminal],
+  ['nav.chat', '/dashboard', MessageSquareText],
   ['nav.images', '/images', Image],
-  ['nav.videos', '/videos', Video],
-  ['nav.promptLibrary', '/prompt-library', BookOpen],
   ['nav.history', '/history', HistoryIcon],
   ['nav.apiKeys', '/api-keys', KeyRound],
-  ['nav.pricing', '/pricing', CreditCard],
-  ['nav.upgrade', '/upgrade', Sparkles],
-  ['nav.apiDocs', '/docs', FileCode2],
-  ['nav.usage', '/usage', BarChart3],
-  ['nav.aiProviders', '/settings/providers', Settings],
+  ['nav.apiDocs', '/docs', BookOpen],
+  ['nav.settings', '/settings', Settings],
   ['nav.account', '/account', UserCircle]
 ]
 
