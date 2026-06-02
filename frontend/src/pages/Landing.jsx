@@ -1,5 +1,6 @@
 import { ArrowRight, BarChart3, Check, Code2, Cpu, Image, KeyRound, Layers3, LockKeyhole, MessageSquareText, ShieldCheck, Sparkles, TerminalSquare, Video, Zap } from 'lucide-react'
 import { Link, Navigate } from 'react-router-dom'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import ThemeToggle from '../components/ThemeToggle'
 import { GlassButton, GlassCard } from '../components/ui'
 import { useAuth } from '../context/AuthContext'
@@ -57,6 +58,7 @@ export default function Landing() {
           <a href="#faq">FAQ</a>
         </div>
         <div className="landing-nav-actions">
+          <LanguageSwitcher />
           <ThemeToggle />
           <Link to="/login">Sign in</Link>
           <GlassButton as={Link} to="/register" className="landing-nav-cta">

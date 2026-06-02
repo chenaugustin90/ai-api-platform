@@ -2,6 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import './styles.css'
+import './i18n'
+import I18nTextSync from './components/I18nTextSync'
 import Layout from './components/Layout'
 import LiquidGlassEffects from './components/LiquidGlassEffects'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -68,6 +70,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <AuthProvider>
       <ToastProvider>
+        <I18nTextSync />
         <LiquidGlassEffects />
         <RouterProvider router={router} />
       </ToastProvider>

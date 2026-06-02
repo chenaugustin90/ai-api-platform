@@ -6021,6 +6021,46 @@ body.theme-light .upgrade-metric-row strong {
   transform: translateY(-1px);
 }
 
+.language-switcher {
+  display: inline-flex;
+  min-height: 2.45rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid rgba(190, 250, 255, 0.14);
+  border-radius: 999px;
+  padding: 0 0.8rem;
+  color: #dffbff;
+  font-size: 0.8rem;
+  font-weight: 820;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  transition: transform 220ms ease, border-color 220ms ease, background 220ms ease;
+}
+
+.language-switcher:hover {
+  border-color: rgba(0, 229, 255, 0.28);
+  background: rgba(0, 229, 255, 0.09);
+  transform: translateY(-1px);
+}
+
+.language-switcher select {
+  appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.language-switcher option {
+  color: #0f172a;
+  background: #f8fbff;
+}
+
 .pricing-plan-card {
   min-height: 30rem;
 }
@@ -6531,6 +6571,7 @@ body.theme-light .lg-control::placeholder {
 body.theme-light .lg-control,
 body.theme-light .vision-nav-item,
 body.theme-light .theme-toggle,
+body.theme-light .language-switcher,
 body.theme-light .account-status-strip span,
 body.theme-light .account-warning,
 body.theme-light .landing-code-row,
@@ -6542,6 +6583,10 @@ body.theme-light .pricing-plan-limit {
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.62)),
     rgba(255, 255, 255, 0.72);
+}
+
+body.theme-light .language-switcher select {
+  color: #1d1d1f;
 }
 
 body.theme-light .landing-console-result,

@@ -1,31 +1,34 @@
 import { BarChart3, BookOpen, CreditCard, FileCode2, History as HistoryIcon, Image, KeyRound, LayoutDashboard, LogOut, Menu, Settings, Sparkles, SquareTerminal, UserCircle, Video, X, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import AiStatusIndicator from './AiStatusIndicator'
 import CommandPalette from './CommandPalette'
+import LanguageSwitcher from './LanguageSwitcher'
 import ThemeToggle from './ThemeToggle'
 import { GlassButton, GlassCard } from './ui'
 
 const links = [
-  ['Dashboard', '/dashboard', LayoutDashboard],
-  ['Playground', '/playground', SquareTerminal],
-  ['Images', '/images', Image],
-  ['Videos', '/videos', Video],
-  ['Prompt Library', '/prompt-library', BookOpen],
-  ['History', '/history', HistoryIcon],
-  ['API Keys', '/api-keys', KeyRound],
-  ['Pricing', '/pricing', CreditCard],
-  ['Upgrade', '/upgrade', Sparkles],
-  ['API Docs', '/docs', FileCode2],
-  ['Usage', '/usage', BarChart3],
-  ['AI Providers', '/settings/providers', Settings],
-  ['Account', '/account', UserCircle]
+  ['nav.dashboard', '/dashboard', LayoutDashboard],
+  ['nav.playground', '/playground', SquareTerminal],
+  ['nav.images', '/images', Image],
+  ['nav.videos', '/videos', Video],
+  ['nav.promptLibrary', '/prompt-library', BookOpen],
+  ['nav.history', '/history', HistoryIcon],
+  ['nav.apiKeys', '/api-keys', KeyRound],
+  ['nav.pricing', '/pricing', CreditCard],
+  ['nav.upgrade', '/upgrade', Sparkles],
+  ['nav.apiDocs', '/docs', FileCode2],
+  ['nav.usage', '/usage', BarChart3],
+  ['nav.aiProviders', '/settings/providers', Settings],
+  ['nav.account', '/account', UserCircle]
 ]
 
 export default function Layout() {
   const { user, logout } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -61,10 +64,11 @@ export default function Layout() {
             {creditsRemaining !== null && (
               <span className="header-credit-pill hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-semibold text-cyan-50 sm:inline-flex">
                 <Zap className="h-3.5 w-3.5 text-[#00E5FF]" />
-                {Number(creditsRemaining).toLocaleString()} credits
+                {Number(creditsRemaining).toLocaleString()} {t('nav.credits')}
               </span>
             )}
             <span className="hidden max-w-[260px] truncate rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[#A1A1AA] sm:inline">{user?.email}</span>
+            <LanguageSwitcher className="hidden sm:inline-flex" />
             <GlassButton
               variant="secondary"
               className="header-logout hidden sm:inline-flex"
@@ -73,12 +77,12 @@ export default function Layout() {
                 navigate('/login')
               }}
             >
-              <LogOut className="h-4 w-4" /> Logout
+              <LogOut className="h-4 w-4" /> {t('nav.logout')}
             </GlassButton>
             <button
               type="button"
               className="mobile-menu-button"
-              aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
+              aria-label={menuOpen ? t('dom.Close navigation') : t('dom.Open navigation')}
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((current) => !current)}
             >
@@ -90,7 +94,7 @@ export default function Layout() {
       <div className={`mobile-nav-backdrop ${menuOpen ? 'is-open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
       <div className="app-layout mx-auto grid max-w-7xl gap-5 px-4 py-5 md:grid-cols-[184px_1fr] lg:grid-cols-[248px_1fr] lg:gap-6 lg:py-6">
         <GlassCard as="nav" className={`vision-sidebar h-fit p-3 md:sticky md:top-24 ${menuOpen ? 'is-open' : ''}`}>
-          {links.map(([label, href, Icon]) => (
+          {links.map(([labelKey, href, Icon]) => (
             <NavLink
               key={href}
               to={href}
@@ -102,9 +106,10 @@ export default function Layout() {
               <span className="vision-nav-icon">
                 <Icon className="h-4 w-4" />
               </span>
-              <span className="vision-nav-label">{label}</span>
+              <span className="vision-nav-label">{t(labelKey)}</span>
             </NavLink>
           ))}
+          <LanguageSwitcher className="mt-2 w-full justify-center sm:hidden" />
           <ThemeToggle className="mt-2 w-full justify-center sm:hidden" />
           <button
             type="button"
@@ -117,7 +122,7 @@ export default function Layout() {
             <span className="vision-nav-icon">
               <LogOut className="h-4 w-4" />
             </span>
-            <span className="vision-nav-label">Logout</span>
+            <span className="vision-nav-label">{t('nav.logout')}</span>
           </button>
         </GlassCard>
         <main key={location.pathname} className="page-transition">
