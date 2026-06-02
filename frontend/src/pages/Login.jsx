@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { KeyRound, LockKeyhole, MessageSquareText, ShieldCheck, Sparkles, TerminalSquare } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
+import { applyTheme, getStoredTheme } from '../components/ThemeToggle'
 import { GlassButton, GlassCard, GlassInput } from '../components/ui'
 
 export default function Login() {
@@ -39,14 +40,21 @@ export default function Login() {
 
 export function AuthFrame({ title, aside, children }) {
   const { t } = useTranslation()
+  const domText = t('dom', { returnObjects: true })
+  const tr = (key) => domText?.[key] || key
   const railItems = [LockKeyhole, TerminalSquare, MessageSquareText, ShieldCheck, KeyRound]
+  const [theme, setTheme] = useState(() => getStoredTheme())
+
+  useEffect(() => {
+    applyTheme(theme)
+  }, [theme])
 
   return (
     <div className="auth-shell authkit-shell page-shell min-h-screen overflow-hidden">
       <div className="authkit-topbar">
         <span className="authkit-wordmark">AI API Platform</span>
         <span className="authkit-mark"><KeyRound className="h-5 w-5" /></span>
-        <Link to="/register" className="authkit-get-started">{t('dom.Get started')}</Link>
+        <Link to="/register" className="authkit-get-started">{tr('Get started')}</Link>
       </div>
 
       <section className="authkit-stage px-4 py-24 sm:px-6">
@@ -54,16 +62,16 @@ export function AuthFrame({ title, aside, children }) {
         <div className="authkit-cross authkit-cross-right" aria-hidden="true" />
 
         <div className="authkit-copy">
-          <p className="eyebrow mb-4">{t('dom.Introducing')}</p>
+          <p className="eyebrow mb-4">{tr('Introducing')}</p>
           <h1 className="title-gradient">AI API</h1>
-          <p>{t(`dom.${aside}`)}</p>
+          <p>{tr(aside)}</p>
         </div>
 
         <div className="authkit-card-stack">
           <GlassCard className="authkit-ghost-card authkit-ghost-left" aria-hidden="true">
             <Sparkles className="h-8 w-8" />
-            <h3>{t('dom.Provider routing')}</h3>
-            <p>{t('dom.OpenAI, Claude, DeepSeek')}</p>
+            <h3>{tr('Provider routing')}</h3>
+            <p>{tr('OpenAI, Claude, DeepSeek')}</p>
             <span />
             <span />
           </GlassCard>
@@ -74,25 +82,37 @@ export function AuthFrame({ title, aside, children }) {
             <span className="authkit-card-corner authkit-card-corner-c" />
             <span className="authkit-card-corner authkit-card-corner-d" />
             <div className="authkit-card-logo"><KeyRound className="h-6 w-6" /></div>
-            <p className="eyebrow mb-3">{t('dom.Secure Access')}</p>
-            <h2 className="mb-6 text-2xl font-bold text-white sm:text-3xl">{t(`dom.${title}`)}</h2>
+            <p className="eyebrow mb-3">{tr('Secure Access')}</p>
+            <h2 className="mb-6 text-2xl font-bold text-white sm:text-3xl">{tr(title)}</h2>
             {children}
           </GlassCard>
 
           <GlassCard className="authkit-ghost-card authkit-ghost-right" aria-hidden="true">
             <ShieldCheck className="h-8 w-8" />
-            <h3>{t('dom.Metered API')}</h3>
-            <p>{t('dom.Credits, keys, usage history')}</p>
+            <h3>{tr('Metered API')}</h3>
+            <p>{tr('Credits, keys, usage history')}</p>
             <span />
             <span />
           </GlassCard>
         </div>
 
-        <div className="authkit-mode-toggle" aria-hidden="true">
-          <span className="is-active">{t('theme.dark')}</span>
-          <span>{t('theme.light')}</span>
+        <div className="authkit-mode-toggle" role="group" aria-label={t('language.label')}>
+          <button
+            type="button"
+            className={theme === 'dark' ? 'is-active' : ''}
+            onClick={() => setTheme('dark')}
+          >
+            {t('theme.dark')}
+          </button>
+          <button
+            type="button"
+            className={theme === 'light' ? 'is-active' : ''}
+            onClick={() => setTheme('light')}
+          >
+            {t('theme.light')}
+          </button>
         </div>
-        <p className="authkit-mode-copy">{t('dom.Light and dark modes supported.')}</p>
+        <p className="authkit-mode-copy">{tr('Light and dark modes supported.')}</p>
 
         <div className="authkit-rail" aria-hidden="true">
           {railItems.map((Icon, index) => (

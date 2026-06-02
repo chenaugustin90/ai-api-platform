@@ -1,4 +1,5 @@
 import { ArrowRight, BarChart3, Check, Code2, Cpu, Image, KeyRound, Layers3, LockKeyhole, MessageSquareText, ShieldCheck, Sparkles, TerminalSquare, Video, Zap } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Link, Navigate } from 'react-router-dom'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import ThemeToggle from '../components/ThemeToggle'
@@ -40,6 +41,9 @@ const faqs = [
 
 export default function Landing() {
   const { user, loading } = useAuth()
+  const { t } = useTranslation()
+  const domText = t('dom', { returnObjects: true })
+  const tr = (key) => domText?.[key] || key
 
   if (loading) return <div className="landing-loading">Loading...</div>
   if (user) return <Navigate to="/dashboard" replace />
@@ -67,13 +71,15 @@ export default function Landing() {
         </div>
       </nav>
 
-      <section className="landing-hero">
+      <section className="landing-hero authkit-landing-hero">
         <div className="landing-hero-grid" aria-hidden="true" />
+        <div className="authkit-cross authkit-cross-left" aria-hidden="true" />
+        <div className="authkit-cross authkit-cross-right" aria-hidden="true" />
         <div className="landing-hero-content">
-          <p className="eyebrow mb-4">Production AI SaaS infrastructure</p>
-          <h1>Launch a premium AI API business without stitching the basics together.</h1>
+          <p className="eyebrow mb-4">{tr('Introducing')}</p>
+          <h1>AI API Platform</h1>
           <p>
-            A glass-clear control plane for provider routing, API keys, credits, usage history, billing, and developer docs. Built for teams turning AI generation into a real product.
+            {tr('Launch a premium AI API business with authentication, provider routing, credits, billing, and developer docs already built in.')}
           </p>
           <div className="landing-hero-actions">
             <GlassButton as={Link} to="/register">
@@ -88,18 +94,31 @@ export default function Landing() {
           </div>
         </div>
 
-        <GlassCard className="landing-hero-console">
-          <div className="landing-console-top">
+        <div className="landing-authkit-stack">
+          <GlassCard className="landing-authkit-ghost landing-authkit-left" aria-hidden="true">
+            <Sparkles className="h-8 w-8" />
+            <h3>{tr('Provider routing')}</h3>
+            <p>{tr('OpenAI · Claude · DeepSeek')}</p>
             <span />
             <span />
-            <span />
-          </div>
-          <div className="landing-console-orbit" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <pre>{`POST /api/generate/text
+          </GlassCard>
+
+          <GlassCard className="landing-hero-console landing-authkit-main">
+            <span className="authkit-card-corner authkit-card-corner-a" />
+            <span className="authkit-card-corner authkit-card-corner-b" />
+            <span className="authkit-card-corner authkit-card-corner-c" />
+            <span className="authkit-card-corner authkit-card-corner-d" />
+            <div className="landing-console-top">
+              <span />
+              <span />
+              <span />
+            </div>
+            <div className="landing-console-orbit" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+            <pre>{`POST /api/generate/text
 X-API-Key: ai_live_...
 
 {
@@ -108,11 +127,28 @@ X-API-Key: ai_live_...
   "prompt": "Draft launch copy for our AI API",
   "max_tokens": 512
 }`}</pre>
-          <div className="landing-console-result">
-            <Sparkles className="h-4 w-4" />
-            200 OK · 1 credit · 642 ms
-          </div>
-        </GlassCard>
+            <div className="landing-console-result">
+              <Sparkles className="h-4 w-4" />
+              200 OK · 1 credit · 642 ms
+            </div>
+          </GlassCard>
+
+          <GlassCard className="landing-authkit-ghost landing-authkit-right" aria-hidden="true">
+            <ShieldCheck className="h-8 w-8" />
+            <h3>{tr('Metered API')}</h3>
+            <p>{tr('Credits · Keys · Usage')}</p>
+            <span />
+            <span />
+          </GlassCard>
+        </div>
+
+        <div className="landing-authkit-rail" aria-hidden="true">
+          {[LockKeyhole, TerminalSquare, MessageSquareText, ShieldCheck, KeyRound].map((Icon, index) => (
+            <div className="authkit-rail-node" key={index}>
+              <Icon className="h-5 w-5" />
+            </div>
+          ))}
+        </div>
       </section>
 
       <section id="features" className="landing-section landing-reveal">

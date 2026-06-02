@@ -6,6 +6,349 @@
   box-sizing: border-box;
 }
 
+/* Final AuthKit landing/auth overrides. Keep this at the end so older landing rules cannot win. */
+.authkit-auth-card,
+.landing-authkit-main {
+  position: relative;
+  z-index: 4;
+}
+
+.authkit-ghost-card,
+.landing-authkit-ghost {
+  pointer-events: none;
+}
+
+.authkit-mode-toggle {
+  pointer-events: auto;
+}
+
+.authkit-mode-toggle button {
+  min-width: 5.2rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  color: rgba(203, 213, 225, 0.64);
+  font-size: 0.8rem;
+  font-weight: 760;
+  text-align: center;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.authkit-mode-toggle button.is-active {
+  color: #eaf2ff;
+  background: rgba(148, 163, 184, 0.14);
+  box-shadow: inset 0 1px 0 rgba(239, 246, 255, 0.18), 0 0 24px rgba(147, 197, 253, 0.1);
+}
+
+.authkit-mode-toggle button:hover {
+  transform: translateY(-1px);
+  color: #f8fbff;
+}
+
+body:not(.theme-light) .landing-page {
+  background:
+    radial-gradient(42rem 30rem at 50% 5%, rgba(92, 132, 214, 0.2), transparent 70%),
+    linear-gradient(180deg, #040712 0%, #080d1b 52%, #050813 100%);
+}
+
+body:not(.theme-light) .landing-page::before {
+  background:
+    radial-gradient(28rem 46rem at 50% 0%, rgba(142, 183, 255, 0.2), transparent 74%),
+    linear-gradient(90deg, transparent 0 30%, rgba(148, 163, 184, 0.16) 30.08%, transparent 30.16% 69.84%, rgba(148, 163, 184, 0.14) 69.92%, transparent 70%),
+    linear-gradient(180deg, transparent 0 12%, rgba(148, 163, 184, 0.08) 12.08%, transparent 12.16% 32%, rgba(148, 163, 184, 0.1) 32.08%, transparent 32.16%);
+  filter: none;
+  animation: authkit-beam 14s ease-in-out infinite alternate;
+}
+
+.landing-page .landing-nav {
+  width: min(67rem, calc(100% - 2rem));
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background:
+    linear-gradient(180deg, rgba(30, 41, 66, 0.64), rgba(7, 12, 26, 0.54)),
+    rgba(8, 13, 27, 0.55);
+}
+
+.landing-page .landing-brand span {
+  border-radius: 999px;
+}
+
+.landing-hero.authkit-landing-hero {
+  position: relative;
+  display: flex;
+  min-height: 980px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 9rem;
+  text-align: center;
+}
+
+.landing-hero.authkit-landing-hero::before {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  width: min(38rem, 90vw);
+  height: 62rem;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(188, 212, 255, 0.28), rgba(90, 125, 196, 0.13) 31%, transparent 72%),
+    linear-gradient(180deg, rgba(113, 148, 214, 0.16), transparent 72%);
+  filter: blur(24px);
+  opacity: 0.9;
+  transform: translateX(-50%);
+  animation: authkit-stage-beam 7s ease-in-out infinite alternate;
+}
+
+.landing-hero.authkit-landing-hero .landing-hero-content {
+  position: relative;
+  z-index: 3;
+  margin: 0 auto;
+  max-width: 54rem;
+}
+
+.landing-hero.authkit-landing-hero h1 {
+  margin: 0;
+  font-size: clamp(4.3rem, 10.5vw, 8.6rem);
+  letter-spacing: -0.08em;
+  line-height: 0.9;
+  text-shadow: 0 0 54px rgba(147, 197, 253, 0.24);
+}
+
+.landing-hero.authkit-landing-hero .landing-hero-content > p:not(.eyebrow) {
+  max-width: 38rem;
+  margin: 1.1rem auto 0;
+  color: rgba(191, 219, 254, 0.82);
+}
+
+.landing-hero.authkit-landing-hero .landing-hero-actions {
+  justify-content: center;
+}
+
+.landing-authkit-stack {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  width: min(62rem, 100%);
+  min-height: 24rem;
+  margin-top: 3rem;
+  place-items: center;
+  perspective: 1200px;
+}
+
+.landing-hero-console.landing-authkit-main {
+  width: min(31rem, calc(100vw - 2rem));
+  margin: 0 auto;
+  border-radius: 18px;
+  transform: translateY(0);
+  animation: authkit-card-in 820ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-ghost {
+  position: absolute;
+  top: 2.6rem;
+  width: min(25rem, 42vw);
+  min-height: 15rem;
+  padding: 2rem;
+  border-radius: 18px;
+  opacity: 0.52;
+  filter: saturate(0.76);
+}
+
+.landing-authkit-ghost svg {
+  color: rgba(147, 197, 253, 0.42);
+}
+
+.landing-authkit-ghost h3 {
+  margin-top: 1.25rem;
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 1rem;
+}
+
+.landing-authkit-ghost p {
+  margin: 0.45rem 0 1rem;
+  color: rgba(191, 219, 254, 0.54);
+  font-size: 0.9rem;
+}
+
+.landing-authkit-ghost span {
+  display: block;
+  height: 2.1rem;
+  margin-top: 0.7rem;
+  border: 1px solid rgba(191, 219, 254, 0.1);
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.055);
+}
+
+.landing-authkit-left {
+  left: 1rem;
+  transform: translateX(-4.25rem) rotateY(-18deg) rotateZ(-1.4deg);
+  animation: authkit-left-card 900ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-right {
+  right: 1rem;
+  transform: translateX(4.25rem) rotateY(18deg) rotateZ(1.4deg);
+  animation: authkit-right-card 900ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-rail {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2.8rem;
+  margin-top: 4rem;
+}
+
+.landing-authkit-rail .authkit-rail-node {
+  width: 3rem;
+  height: 3rem;
+}
+
+body:not(.theme-light) .app-layout .lg-card,
+body:not(.theme-light) .app-layout .glass-panel,
+body:not(.theme-light) .app-layout .panel,
+body:not(.theme-light) .studio-composer,
+body:not(.theme-light) .playground-console,
+body:not(.theme-light) .provider-card,
+body:not(.theme-light) .dashboard-generator,
+body:not(.theme-light) .docs-code-block {
+  border-radius: 18px;
+  border-color: rgba(172, 196, 239, 0.18);
+  background:
+    linear-gradient(180deg, rgba(33, 43, 68, 0.64), rgba(10, 16, 31, 0.42)),
+    radial-gradient(22rem 15rem at 50% 0%, rgba(154, 190, 255, 0.09), transparent 72%),
+    rgba(8, 13, 27, 0.58);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.025),
+    inset 0 1px 0 rgba(232, 240, 255, 0.16),
+    inset 0 -1px 0 rgba(148, 163, 184, 0.06);
+  backdrop-filter: blur(22px) saturate(138%);
+  -webkit-backdrop-filter: blur(22px) saturate(138%);
+}
+
+@media (max-width: 900px) {
+  .landing-hero.authkit-landing-hero {
+    min-height: auto;
+    padding-top: 6rem;
+    text-align: center;
+  }
+
+  .landing-hero.authkit-landing-hero h1 {
+    font-size: clamp(3.3rem, 17vw, 5.4rem);
+    letter-spacing: -0.065em;
+  }
+
+  .landing-authkit-stack {
+    min-height: auto;
+    margin-top: 2rem;
+  }
+
+  .landing-authkit-ghost,
+  .landing-authkit-rail,
+  .landing-hero.authkit-landing-hero .authkit-cross {
+    display: none;
+  }
+
+  .landing-hero.authkit-landing-hero .landing-hero-actions {
+    justify-content: center;
+  }
+}
+
+/* Auth pages need a tighter first viewport than the landing page. */
+.authkit-shell .authkit-stage {
+  min-height: calc(100vh - 4.2rem);
+  justify-content: flex-start;
+  padding-top: clamp(3.4rem, 7vh, 5.25rem);
+  padding-bottom: 2rem;
+}
+
+.authkit-shell .authkit-copy h1 {
+  font-size: clamp(3.6rem, 8.5vw, 6.3rem);
+  letter-spacing: -0.07em;
+}
+
+.authkit-shell .authkit-copy p:not(.eyebrow) {
+  max-width: 28rem;
+  margin-top: 0.8rem;
+  font-size: clamp(0.98rem, 1.65vw, 1.2rem);
+}
+
+.authkit-shell .authkit-card-stack {
+  min-height: 19rem;
+  margin-top: 1.35rem;
+}
+
+.authkit-shell .authkit-auth-card {
+  padding: 1.65rem;
+}
+
+.authkit-shell .authkit-ghost-card {
+  top: 1.65rem;
+  min-height: 13.25rem;
+}
+
+.authkit-shell .authkit-mode-toggle {
+  margin-top: 0.1rem;
+}
+
+.authkit-shell .authkit-rail {
+  margin-top: 2.35rem;
+}
+
+body.theme-light .authkit-shell {
+  background:
+    radial-gradient(34rem 36rem at 50% 0%, rgba(130, 176, 255, 0.28), transparent 72%),
+    linear-gradient(180deg, #eef7ff 0%, #f8fbff 62%, #eef4ff 100%);
+}
+
+body.theme-light .authkit-shell .authkit-copy h1 {
+  background: linear-gradient(180deg, #15345c 0%, #315f98 58%, #786ce8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+body.theme-light .authkit-shell .authkit-copy p:not(.eyebrow),
+body.theme-light .authkit-mode-copy {
+  color: #334155;
+}
+
+body.theme-light .authkit-shell .authkit-auth-card,
+body.theme-light .authkit-shell .authkit-ghost-card {
+  border-color: rgba(255, 255, 255, 0.9);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.62), rgba(255, 255, 255, 0.34)),
+    rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 22px 58px rgba(31, 38, 135, 0.12),
+    inset 0 1px 1px rgba(255, 255, 255, 0.86);
+}
+
+body.theme-light .authkit-mode-toggle {
+  border-color: rgba(91, 168, 255, 0.24);
+  background: rgba(255, 255, 255, 0.34);
+}
+
+body.theme-light .authkit-mode-toggle button {
+  color: #526174;
+}
+
+body.theme-light .authkit-mode-toggle button.is-active {
+  color: #102033;
+  background: rgba(255, 255, 255, 0.62);
+  box-shadow: 0 10px 26px rgba(31, 38, 135, 0.1), inset 0 1px 1px rgba(255, 255, 255, 0.86);
+}
+
+body.theme-light .authkit-rail-node {
+  color: #315f98;
+  background: rgba(255, 255, 255, 0.46);
+}
+
 /* AuthKit-inspired precision dark system: blueprint depth, cold glass, quiet motion. */
 body:not(.theme-light) {
   background:
@@ -478,20 +821,29 @@ body:not(.theme-light) .title-gradient {
   box-shadow: inset 0 1px 0 rgba(239, 246, 255, 0.1);
 }
 
-.authkit-mode-toggle span {
+.authkit-mode-toggle button {
   min-width: 5.2rem;
+  border: 0;
   border-radius: 999px;
   padding: 0.45rem 1rem;
   color: rgba(203, 213, 225, 0.64);
   font-size: 0.8rem;
   font-weight: 760;
   text-align: center;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease, background 180ms ease, box-shadow 180ms ease;
 }
 
 .authkit-mode-toggle .is-active {
   color: #eaf2ff;
   background: rgba(148, 163, 184, 0.14);
   box-shadow: inset 0 1px 0 rgba(239, 246, 255, 0.18), 0 0 24px rgba(147, 197, 253, 0.1);
+}
+
+.authkit-mode-toggle button:hover {
+  transform: translateY(-1px);
+  color: #f8fbff;
 }
 
 .authkit-mode-copy {
@@ -587,6 +939,19 @@ body:not(.theme-light) .title-gradient {
     linear-gradient(180deg, #040712 0%, #080d1b 52%, #050813 100%);
 }
 
+.landing-page .landing-nav {
+  width: min(67rem, calc(100% - 2rem));
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background:
+    linear-gradient(180deg, rgba(30, 41, 66, 0.64), rgba(7, 12, 26, 0.54)),
+    rgba(8, 13, 27, 0.55);
+}
+
+.landing-page .landing-brand span {
+  border-radius: 999px;
+}
+
 .landing-page::before {
   background:
     radial-gradient(28rem 46rem at 50% 0%, rgba(142, 183, 255, 0.2), transparent 74%),
@@ -596,22 +961,46 @@ body:not(.theme-light) .title-gradient {
   animation: authkit-beam 14s ease-in-out infinite alternate;
 }
 
-.landing-hero {
-  min-height: 760px;
+.landing-hero.authkit-landing-hero {
+  position: relative;
+  display: flex;
+  min-height: 980px;
   align-items: center;
-  grid-template-columns: minmax(0, 1fr);
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 9rem;
   text-align: center;
 }
 
+.landing-hero.authkit-landing-hero::before {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  width: min(38rem, 90vw);
+  height: 62rem;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(188, 212, 255, 0.28), rgba(90, 125, 196, 0.13) 31%, transparent 72%),
+    linear-gradient(180deg, rgba(113, 148, 214, 0.16), transparent 72%);
+  filter: blur(24px);
+  opacity: 0.9;
+  transform: translateX(-50%);
+  animation: authkit-stage-beam 7s ease-in-out infinite alternate;
+}
+
 .landing-hero-content {
+  position: relative;
+  z-index: 3;
   margin: 0 auto;
-  max-width: 58rem;
+  max-width: 54rem;
 }
 
 .landing-hero h1 {
-  font-size: clamp(4.4rem, 9vw, 8.4rem);
+  margin: 0;
+  font-size: clamp(4.3rem, 10.5vw, 8.6rem);
   letter-spacing: -0.08em;
-  line-height: 0.88;
+  line-height: 0.9;
   text-shadow: 0 0 54px rgba(147, 197, 253, 0.24);
 }
 
@@ -625,11 +1014,85 @@ body:not(.theme-light) .title-gradient {
   justify-content: center;
 }
 
-.landing-hero-console {
-  width: min(38rem, 100%);
+.landing-authkit-stack {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  width: min(62rem, 100%);
+  min-height: 24rem;
+  margin-top: 3rem;
+  place-items: center;
+  perspective: 1200px;
+}
+
+.landing-hero-console.landing-authkit-main {
+  width: min(31rem, calc(100vw - 2rem));
   margin: 0 auto;
   border-radius: 18px;
-  transform: translateY(-0.5rem);
+  transform: translateY(0);
+  animation: authkit-card-in 820ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-ghost {
+  position: absolute;
+  top: 2.6rem;
+  width: min(25rem, 42vw);
+  min-height: 15rem;
+  padding: 2rem;
+  border-radius: 18px;
+  opacity: 0.52;
+  filter: saturate(0.76);
+}
+
+.landing-authkit-ghost svg {
+  color: rgba(147, 197, 253, 0.42);
+}
+
+.landing-authkit-ghost h3 {
+  margin-top: 1.25rem;
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 1rem;
+}
+
+.landing-authkit-ghost p {
+  margin: 0.45rem 0 1rem;
+  color: rgba(191, 219, 254, 0.54);
+  font-size: 0.9rem;
+}
+
+.landing-authkit-ghost span {
+  display: block;
+  height: 2.1rem;
+  margin-top: 0.7rem;
+  border: 1px solid rgba(191, 219, 254, 0.1);
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.055);
+}
+
+.landing-authkit-left {
+  left: 1rem;
+  transform: translateX(-4.25rem) rotateY(-18deg) rotateZ(-1.4deg);
+  animation: authkit-left-card 900ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-right {
+  right: 1rem;
+  transform: translateX(4.25rem) rotateY(18deg) rotateZ(1.4deg);
+  animation: authkit-right-card 900ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-rail {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2.8rem;
+  margin-top: 4rem;
+}
+
+.landing-authkit-rail .authkit-rail-node {
+  width: 3rem;
+  height: 3rem;
 }
 
 .landing-feature-card,
@@ -8588,6 +9051,260 @@ body.theme-light .dashboard-generator-preview .muted {
 
   .account-key-row .api-key-revoke {
     width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Final AuthKit landing/auth overrides. Keep this at the end so older landing rules cannot win. */
+.authkit-auth-card,
+.landing-authkit-main {
+  position: relative;
+  z-index: 4;
+}
+
+.authkit-ghost-card,
+.landing-authkit-ghost {
+  pointer-events: none;
+}
+
+.authkit-mode-toggle {
+  pointer-events: auto;
+}
+
+.authkit-mode-toggle button {
+  min-width: 5.2rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+  color: rgba(203, 213, 225, 0.64);
+  font-size: 0.8rem;
+  font-weight: 760;
+  text-align: center;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 180ms ease, color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.authkit-mode-toggle button.is-active {
+  color: #eaf2ff;
+  background: rgba(148, 163, 184, 0.14);
+  box-shadow: inset 0 1px 0 rgba(239, 246, 255, 0.18), 0 0 24px rgba(147, 197, 253, 0.1);
+}
+
+.authkit-mode-toggle button:hover {
+  transform: translateY(-1px);
+  color: #f8fbff;
+}
+
+body:not(.theme-light) .landing-page {
+  background:
+    radial-gradient(42rem 30rem at 50% 5%, rgba(92, 132, 214, 0.2), transparent 70%),
+    linear-gradient(180deg, #040712 0%, #080d1b 52%, #050813 100%);
+}
+
+body:not(.theme-light) .landing-page::before {
+  background:
+    radial-gradient(28rem 46rem at 50% 0%, rgba(142, 183, 255, 0.2), transparent 74%),
+    linear-gradient(90deg, transparent 0 30%, rgba(148, 163, 184, 0.16) 30.08%, transparent 30.16% 69.84%, rgba(148, 163, 184, 0.14) 69.92%, transparent 70%),
+    linear-gradient(180deg, transparent 0 12%, rgba(148, 163, 184, 0.08) 12.08%, transparent 12.16% 32%, rgba(148, 163, 184, 0.1) 32.08%, transparent 32.16%);
+  filter: none;
+  animation: authkit-beam 14s ease-in-out infinite alternate;
+}
+
+.landing-page .landing-nav {
+  width: min(67rem, calc(100% - 2rem));
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  background:
+    linear-gradient(180deg, rgba(30, 41, 66, 0.64), rgba(7, 12, 26, 0.54)),
+    rgba(8, 13, 27, 0.55);
+}
+
+.landing-page .landing-brand span {
+  border-radius: 999px;
+}
+
+.landing-hero.authkit-landing-hero {
+  position: relative;
+  display: flex;
+  min-height: 980px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 9rem;
+  text-align: center;
+}
+
+.landing-hero.authkit-landing-hero::before {
+  position: absolute;
+  top: 1.5rem;
+  left: 50%;
+  width: min(38rem, 90vw);
+  height: 62rem;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(188, 212, 255, 0.28), rgba(90, 125, 196, 0.13) 31%, transparent 72%),
+    linear-gradient(180deg, rgba(113, 148, 214, 0.16), transparent 72%);
+  filter: blur(24px);
+  opacity: 0.9;
+  transform: translateX(-50%);
+  animation: authkit-stage-beam 7s ease-in-out infinite alternate;
+}
+
+.landing-hero.authkit-landing-hero .landing-hero-content {
+  position: relative;
+  z-index: 3;
+  margin: 0 auto;
+  max-width: 54rem;
+}
+
+.landing-hero.authkit-landing-hero h1 {
+  margin: 0;
+  font-size: clamp(4.3rem, 10.5vw, 8.6rem);
+  letter-spacing: -0.08em;
+  line-height: 0.9;
+  text-shadow: 0 0 54px rgba(147, 197, 253, 0.24);
+}
+
+.landing-hero.authkit-landing-hero .landing-hero-content > p:not(.eyebrow) {
+  max-width: 38rem;
+  margin: 1.1rem auto 0;
+  color: rgba(191, 219, 254, 0.82);
+}
+
+.landing-hero.authkit-landing-hero .landing-hero-actions {
+  justify-content: center;
+}
+
+.landing-authkit-stack {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  width: min(62rem, 100%);
+  min-height: 24rem;
+  margin-top: 3rem;
+  place-items: center;
+  perspective: 1200px;
+}
+
+.landing-hero-console.landing-authkit-main {
+  width: min(31rem, calc(100vw - 2rem));
+  margin: 0 auto;
+  border-radius: 18px;
+  transform: translateY(0);
+  animation: authkit-card-in 820ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-ghost {
+  position: absolute;
+  top: 2.6rem;
+  width: min(25rem, 42vw);
+  min-height: 15rem;
+  padding: 2rem;
+  border-radius: 18px;
+  opacity: 0.52;
+  filter: saturate(0.76);
+}
+
+.landing-authkit-ghost svg {
+  color: rgba(147, 197, 253, 0.42);
+}
+
+.landing-authkit-ghost h3 {
+  margin-top: 1.25rem;
+  color: rgba(226, 232, 240, 0.74);
+  font-size: 1rem;
+}
+
+.landing-authkit-ghost p {
+  margin: 0.45rem 0 1rem;
+  color: rgba(191, 219, 254, 0.54);
+  font-size: 0.9rem;
+}
+
+.landing-authkit-ghost span {
+  display: block;
+  height: 2.1rem;
+  margin-top: 0.7rem;
+  border: 1px solid rgba(191, 219, 254, 0.1);
+  border-radius: 10px;
+  background: rgba(148, 163, 184, 0.055);
+}
+
+.landing-authkit-left {
+  left: 1rem;
+  transform: translateX(-4.25rem) rotateY(-18deg) rotateZ(-1.4deg);
+  animation: authkit-left-card 900ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-right {
+  right: 1rem;
+  transform: translateX(4.25rem) rotateY(18deg) rotateZ(1.4deg);
+  animation: authkit-right-card 900ms cubic-bezier(.2,.8,.2,1) both;
+}
+
+.landing-authkit-rail {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 2.8rem;
+  margin-top: 4rem;
+}
+
+.landing-authkit-rail .authkit-rail-node {
+  width: 3rem;
+  height: 3rem;
+}
+
+body:not(.theme-light) .app-layout .lg-card,
+body:not(.theme-light) .app-layout .glass-panel,
+body:not(.theme-light) .app-layout .panel,
+body:not(.theme-light) .studio-composer,
+body:not(.theme-light) .playground-console,
+body:not(.theme-light) .provider-card,
+body:not(.theme-light) .dashboard-generator,
+body:not(.theme-light) .docs-code-block {
+  border-radius: 18px;
+  border-color: rgba(172, 196, 239, 0.18);
+  background:
+    linear-gradient(180deg, rgba(33, 43, 68, 0.64), rgba(10, 16, 31, 0.42)),
+    radial-gradient(22rem 15rem at 50% 0%, rgba(154, 190, 255, 0.09), transparent 72%),
+    rgba(8, 13, 27, 0.58);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(255, 255, 255, 0.025),
+    inset 0 1px 0 rgba(232, 240, 255, 0.16),
+    inset 0 -1px 0 rgba(148, 163, 184, 0.06);
+  backdrop-filter: blur(22px) saturate(138%);
+  -webkit-backdrop-filter: blur(22px) saturate(138%);
+}
+
+@media (max-width: 900px) {
+  .landing-hero.authkit-landing-hero {
+    min-height: auto;
+    padding-top: 6rem;
+    text-align: center;
+  }
+
+  .landing-hero.authkit-landing-hero h1 {
+    font-size: clamp(3.3rem, 17vw, 5.4rem);
+    letter-spacing: -0.065em;
+  }
+
+  .landing-authkit-stack {
+    min-height: auto;
+    margin-top: 2rem;
+  }
+
+  .landing-authkit-ghost,
+  .landing-authkit-rail,
+  .landing-hero.authkit-landing-hero .authkit-cross {
+    display: none;
+  }
+
+  .landing-hero.authkit-landing-hero .landing-hero-actions {
     justify-content: center;
   }
 }
