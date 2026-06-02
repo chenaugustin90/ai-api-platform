@@ -40,7 +40,6 @@ const router = createBrowserRouter([
   { path: '/', element: <Landing /> },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
-  { path: '/docs', element: <Docs /> },
   { path: '/share/:id', element: <SharedPreview /> },
   {
     element: (
