@@ -77,11 +77,17 @@ function safeParseJson(text) {
 
 function formatApiError(data) {
   const detail = data?.detail || data
-  if (typeof detail === 'string') return detail
+  if (typeof detail === 'string') return friendlyError(detail)
   if (Array.isArray(detail)) return detail.map((item) => item.msg || item.message || 'Invalid request').join(', ')
   if (detail?.provider && detail?.message) return detail.message
   if (detail?.provider && detail?.error) return `${detail.provider} request failed. Check provider configuration, model access, and quota.`
   if (detail?.code === 'stripe_not_configured' && Array.isArray(detail.missing)) return `${detail.message} Missing: ${detail.missing.join(', ')}.`
   if (detail?.message) return detail.message
   return 'Request failed. Please check provider configuration, model access, and credits.'
+}
+
+function friendlyError(message) {
+  if (message === 'Email already registered') return 'This email is already registered. Please log in or use a different email.'
+  if (message === 'Invalid email or password') return 'Invalid email or password. Please check your credentials and try again.'
+  return message
 }

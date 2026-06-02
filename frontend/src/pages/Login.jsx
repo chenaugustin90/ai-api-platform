@@ -8,18 +8,23 @@ import { GlassButton, GlassCard, GlassInput } from '../components/ui'
 
 export default function Login() {
   const { login } = useAuth()
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   async function submit(event) {
     event.preventDefault()
     setError('')
+    setSubmitting(true)
     try {
-      await login(form.email, form.password)
+      await login(form.email.trim(), form.password)
       navigate('/dashboard')
     } catch (err) {
       setError(err.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -29,7 +34,7 @@ export default function Login() {
         <GlassInput placeholder="Email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <GlassInput placeholder="Password" type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
-        <GlassButton type="submit" className="w-full">Login</GlassButton>
+        <GlassButton type="submit" className="w-full" disabled={submitting}>{submitting ? t('dom.Signing in...') : t('dom.Login')}</GlassButton>
         <p className="text-sm text-[#A1A1AA]">
           Need an account? <Link className="font-semibold text-[#00E5FF] transition hover:text-white" to="/register">Register</Link>
         </p>
