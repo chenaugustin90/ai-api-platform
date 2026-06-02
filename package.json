@@ -9,9 +9,11 @@
     "preview": "vite preview --host 0.0.0.0"
   },
   "dependencies": {
+    "i18next": "^26.3.0",
     "lucide-react": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-i18next": "^17.0.8",
     "react-router-dom": "latest"
   },
   "devDependencies": {
