@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { KeyRound, LockKeyhole, MessageSquareText, ShieldCheck, Sparkles, TerminalSquare } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { GlassButton, GlassCard, GlassInput } from '../components/ui'
 
@@ -36,27 +38,69 @@ export default function Login() {
 }
 
 export function AuthFrame({ title, aside, children }) {
+  const { t } = useTranslation()
+  const railItems = [LockKeyhole, TerminalSquare, MessageSquareText, ShieldCheck, KeyRound]
+
   return (
-    <div className="auth-shell page-shell grid min-h-screen overflow-hidden md:grid-cols-[1.05fr_0.95fr]">
-      <section className="auth-hero relative flex min-h-[42vh] items-center justify-center px-6 py-10 text-white sm:px-8 sm:py-12">
-        <div className="orbital-glow left-12 top-20" />
-        <div className="orbital-glow bottom-8 right-12 opacity-50" />
-        <div className="relative max-w-xl">
-          <p className="eyebrow mb-5">AI API Platform</p>
-          <h1 className="title-gradient text-3xl font-bold leading-tight sm:text-4xl lg:text-6xl">{aside}</h1>
-          <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {['OpenAI', 'DeepSeek', 'FLUX'].map((item) => (
-              <div key={item} className="auth-provider-chip">{item}</div>
-            ))}
-          </div>
+    <div className="auth-shell authkit-shell page-shell min-h-screen overflow-hidden">
+      <div className="authkit-topbar">
+        <span className="authkit-wordmark">AI API Platform</span>
+        <span className="authkit-mark"><KeyRound className="h-5 w-5" /></span>
+        <Link to="/register" className="authkit-get-started">{t('dom.Get started')}</Link>
+      </div>
+
+      <section className="authkit-stage px-4 py-24 sm:px-6">
+        <div className="authkit-cross authkit-cross-left" aria-hidden="true" />
+        <div className="authkit-cross authkit-cross-right" aria-hidden="true" />
+
+        <div className="authkit-copy">
+          <p className="eyebrow mb-4">{t('dom.Introducing')}</p>
+          <h1 className="title-gradient">AI API</h1>
+          <p>{t(`dom.${aside}`)}</p>
         </div>
-      </section>
-      <section className="auth-card-wrap flex items-center justify-center px-4 py-8 sm:px-6 sm:py-12">
-        <GlassCard className="w-full max-w-md p-5 sm:p-7 md:p-8">
-          <p className="eyebrow mb-3">Secure Access</p>
-          <h2 className="mb-6 text-2xl font-bold text-white sm:text-3xl">{title}</h2>
-          {children}
-        </GlassCard>
+
+        <div className="authkit-card-stack">
+          <GlassCard className="authkit-ghost-card authkit-ghost-left" aria-hidden="true">
+            <Sparkles className="h-8 w-8" />
+            <h3>{t('dom.Provider routing')}</h3>
+            <p>{t('dom.OpenAI, Claude, DeepSeek')}</p>
+            <span />
+            <span />
+          </GlassCard>
+
+          <GlassCard className="authkit-auth-card">
+            <span className="authkit-card-corner authkit-card-corner-a" />
+            <span className="authkit-card-corner authkit-card-corner-b" />
+            <span className="authkit-card-corner authkit-card-corner-c" />
+            <span className="authkit-card-corner authkit-card-corner-d" />
+            <div className="authkit-card-logo"><KeyRound className="h-6 w-6" /></div>
+            <p className="eyebrow mb-3">{t('dom.Secure Access')}</p>
+            <h2 className="mb-6 text-2xl font-bold text-white sm:text-3xl">{t(`dom.${title}`)}</h2>
+            {children}
+          </GlassCard>
+
+          <GlassCard className="authkit-ghost-card authkit-ghost-right" aria-hidden="true">
+            <ShieldCheck className="h-8 w-8" />
+            <h3>{t('dom.Metered API')}</h3>
+            <p>{t('dom.Credits, keys, usage history')}</p>
+            <span />
+            <span />
+          </GlassCard>
+        </div>
+
+        <div className="authkit-mode-toggle" aria-hidden="true">
+          <span className="is-active">{t('theme.dark')}</span>
+          <span>{t('theme.light')}</span>
+        </div>
+        <p className="authkit-mode-copy">{t('dom.Light and dark modes supported.')}</p>
+
+        <div className="authkit-rail" aria-hidden="true">
+          {railItems.map((Icon, index) => (
+            <div className="authkit-rail-node" key={index}>
+              <Icon className="h-5 w-5" />
+            </div>
+          ))}
+        </div>
       </section>
     </div>
   )
