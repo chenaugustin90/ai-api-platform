@@ -1,4 +1,4 @@
-import { Check, CheckCircle2, Clock3, Loader2, MessageCircle, ShieldCheck, WalletCards, XCircle, Zap } from 'lucide-react'
+import { Check, CheckCircle2, Clock3, Copy, Loader2, MessageCircle, ShieldCheck, WalletCards, XCircle, Zap } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { GlassButton, GlassCard, GlassModal, GlassTextarea } from '../components/ui'
@@ -72,6 +72,11 @@ export default function Pricing() {
 
   const plan = config?.plan || { amount_cents: 999, credits: 5000, duration_days: 30 }
 
+  async function copyZelle() {
+    await navigator.clipboard.writeText(config?.zelle_contact || '')
+    setMessage('Zelle payment address copied.')
+  }
+
   return (
     <div className="space-y-8">
       <header>
@@ -128,6 +133,17 @@ export default function Pricing() {
               </p>
             </div>
           </div>
+          {method === 'wechat' && config?.wechat_qr_url && (
+            <div className="manual-wechat-qr">
+              <img src={config.wechat_qr_url} alt="WeChat payment QR code" />
+              <p>Scan this QR code in WeChat and send exactly ${(plan.amount_cents / 100).toFixed(2)} USD equivalent.</p>
+            </div>
+          )}
+          {method === 'zelle' && config?.zelle_contact && (
+            <GlassButton variant="secondary" className="w-full" onClick={copyZelle}>
+              <Copy className="h-4 w-4" /> Copy {config.zelle_contact}
+            </GlassButton>
+          )}
           <label className="block">
             <span className="mb-2 block text-sm font-semibold text-white">Transaction ID or payment reference</span>
             <GlassTextarea value={proof} onChange={(event) => setProof(event.target.value)} placeholder="Example: Zelle confirmation number, WeChat transaction ID, or payer name and time" rows={4} />

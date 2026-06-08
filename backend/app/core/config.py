@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     admin_emails: str = ""
     zelle_payment_contact: str = ""
     wechat_payment_instructions: str = ""
+    wechat_payment_qr_url: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

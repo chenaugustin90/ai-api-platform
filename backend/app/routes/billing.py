@@ -118,6 +118,7 @@ def manual_payment_config(user: User = Depends(get_current_user)):
         is_admin=_is_admin(user),
         zelle_contact=settings.zelle_payment_contact or None,
         wechat_instructions=settings.wechat_payment_instructions or None,
+        wechat_qr_url=settings.wechat_payment_qr_url or None,
         plan={
             "tier": "pro",
             "name": "Pro 30-day access",

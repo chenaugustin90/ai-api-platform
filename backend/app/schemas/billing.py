@@ -94,4 +94,5 @@ class ManualPaymentConfig(BaseModel):
     is_admin: bool = False
     zelle_contact: str | None = None
     wechat_instructions: str | None = None
+    wechat_qr_url: str | None = None
     plan: dict
