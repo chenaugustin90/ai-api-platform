@@ -20,6 +20,8 @@ const links = [
   ['nav.account', '/account', UserCircle]
 ]
 
+const dockLinks = links.filter(([, href]) => ['/dashboard', '/images', '/history', '/settings', '/account'].includes(href))
+
 export default function Layout() {
   const { user, logout } = useAuth()
   const { t } = useTranslation()
@@ -43,10 +45,10 @@ export default function Layout() {
   return (
     <div className="page-shell">
       <CommandPalette />
-      <header className="sticky top-0 z-30 border-b border-white/10 bg-[#0B1020]/55 backdrop-blur-2xl">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:py-4">
+      <header className="spatial-header">
+        <div className="spatial-header-inner">
           <Link to="/dashboard" className="group flex items-center gap-3 text-lg font-bold text-white transition duration-300 hover:scale-[1.02]">
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-white/15 bg-white/10 shadow-[0_0_32px_rgba(0,229,255,0.16)] backdrop-blur-xl" data-magnetic>
+            <span className="spatial-brand-mark" data-magnetic>
               <KeyRound className="h-5 w-5 text-[#00E5FF]" />
             </span>
             <span className="title-gradient brand-full">AI API Platform</span>
@@ -86,8 +88,8 @@ export default function Layout() {
         </div>
       </header>
       <div className={`mobile-nav-backdrop ${menuOpen ? 'is-open' : ''}`} onClick={() => setMenuOpen(false)} aria-hidden="true" />
-      <div className="app-layout mx-auto grid max-w-7xl gap-5 px-4 py-5 md:grid-cols-[184px_1fr] lg:grid-cols-[248px_1fr] lg:gap-6 lg:py-6">
-        <GlassCard as="nav" className={`vision-sidebar h-fit p-3 md:sticky md:top-24 ${menuOpen ? 'is-open' : ''}`}>
+      <div className="app-layout spatial-app-layout">
+        <GlassCard as="nav" className={`vision-sidebar spatial-rail ${menuOpen ? 'is-open' : ''}`}>
           {links.map(([labelKey, href, Icon]) => (
             <NavLink
               key={href}
@@ -119,10 +121,18 @@ export default function Layout() {
             <span className="vision-nav-label">{t('nav.logout')}</span>
           </button>
         </GlassCard>
-        <main key={location.pathname} className="page-transition">
+        <main key={location.pathname} className="page-transition spatial-main">
           <Outlet />
         </main>
       </div>
+      <nav className="mobile-dock" aria-label={t('dom.Navigation')}>
+        {dockLinks.map(([labelKey, href, Icon]) => (
+          <NavLink key={href} to={href} className={({ isActive }) => `mobile-dock-item ${isActive ? 'is-active' : ''}`}>
+            <span><Icon className="h-5 w-5" /></span>
+            <small>{t(labelKey)}</small>
+          </NavLink>
+        ))}
+      </nav>
     </div>
   )
 }

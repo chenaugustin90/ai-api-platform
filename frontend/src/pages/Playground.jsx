@@ -161,9 +161,9 @@ export default function Playground() {
     <div className="playground-page minimal-playground space-y-6">
       <div className="flex flex-col gap-4 lg:items-center lg:text-center">
         <div>
-          <p className="eyebrow mb-2">Chat</p>
-          <h1 className="title-gradient text-4xl font-bold sm:text-5xl md:text-6xl">Prompt the API.</h1>
-          <p className="muted mx-auto mt-3 max-w-2xl text-sm">Start simple. Advanced request details stay out of the way until you need them.</p>
+          <p className="eyebrow mb-2">Create</p>
+          <h1 className="title-gradient text-4xl font-bold sm:text-5xl md:text-6xl">What do you want to make?</h1>
+          <p className="muted mx-auto mt-3 max-w-2xl text-sm">Choose a model, describe the result, and let the platform handle the routing.</p>
         </div>
       </div>
 
@@ -263,7 +263,7 @@ export default function Playground() {
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
                 <p className="eyebrow mb-2">Response</p>
-                <h2 className="text-xl font-semibold text-white">JSON output</h2>
+                <h2 className="text-xl font-semibold text-white">{response ? 'Your result' : 'Ready when you are'}</h2>
               </div>
               <GlassButton variant="ghost" size="icon" onClick={() => copy('response', formatJson(response || { status: 'waiting' }))} aria-label="Copy response">
                 {copied === 'response' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -273,20 +273,24 @@ export default function Playground() {
               <MetricPill icon={Clock3} label={responseTime === null ? 'No response yet' : `${responseTime} ms`} />
               <MetricPill icon={Zap} label={creditsUsed === null ? '0 credits' : `${creditsUsed} credits used`} />
             </div>
-            <pre className="playground-json">{formatJson(response || { status: 'Send a request to inspect the response.' })}</pre>
+            <pre className={`playground-json ${response?.text ? 'is-text-response' : ''}`}>
+              {response?.text || formatJson(response || { status: 'Your generated result will appear here.' })}
+            </pre>
           </GlassCard>
 
-          <GlassCard className={`p-5 ${advancedOpen ? '' : 'hidden xl:block'}`}>
-            <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-              <span className="composer-spark"><Code2 className="h-4 w-4" /></span>
-              Copy snippets
-            </div>
-            <div className="grid gap-3">
-              <SnippetButton label="Copy curl" copied={copied === 'curl'} onClick={() => copy('curl', snippets.curl)} />
-              <SnippetButton label="Copy Python" copied={copied === 'python'} onClick={() => copy('python', snippets.python)} />
-              <SnippetButton label="Copy JavaScript" copied={copied === 'javascript'} onClick={() => copy('javascript', snippets.javascript)} />
-            </div>
-          </GlassCard>
+          {advancedOpen && (
+            <GlassCard className="p-5">
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+                <span className="composer-spark"><Code2 className="h-4 w-4" /></span>
+                Copy snippets
+              </div>
+              <div className="grid gap-3">
+                <SnippetButton label="Copy curl" copied={copied === 'curl'} onClick={() => copy('curl', snippets.curl)} />
+                <SnippetButton label="Copy Python" copied={copied === 'python'} onClick={() => copy('python', snippets.python)} />
+                <SnippetButton label="Copy JavaScript" copied={copied === 'javascript'} onClick={() => copy('javascript', snippets.javascript)} />
+              </div>
+            </GlassCard>
+          )}
         </div>
       </div>
     </div>
