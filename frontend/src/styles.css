@@ -260,6 +260,23 @@ body:not(.theme-light) .docs-code-block {
   }
 }
 
+.manual-payment-grid { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); gap:1rem; }
+.manual-plan-card { border-color:rgba(91,140,255,.34); box-shadow:0 24px 80px rgba(44,88,180,.18),inset 0 1px rgba(255,255,255,.08); }
+.manual-payment-guide,.manual-payment-destination { background:rgba(10,20,40,.46); border:1px solid rgba(255,255,255,.09); }
+.manual-steps,.manual-order-list { display:grid; gap:.75rem; }
+.manual-steps>div,.manual-payment-destination { display:flex; align-items:flex-start; gap:.85rem; padding:1rem; border-radius:12px; }
+.manual-steps>div>span { color:#67e8f9; font-size:.72rem; font-weight:800; letter-spacing:.08em; }
+.manual-steps h3,.manual-order-row strong { color:#fff; font-size:.92rem; }
+.manual-steps p,.manual-order-row p { margin-top:.2rem; color:#a1a1aa; font-size:.8rem; }
+.manual-order-row { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.9rem 1rem; border:1px solid rgba(255,255,255,.08); border-radius:10px; background:rgba(255,255,255,.035); }
+.manual-order-status { display:inline-flex; align-items:center; gap:.4rem; padding:.4rem .65rem; border-radius:999px; color:#fde68a; background:rgba(245,158,11,.1); border:1px solid rgba(245,158,11,.25); font-size:.72rem; font-weight:800; text-transform:capitalize; }
+.manual-order-status.is-approved { color:#86efac; background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.25); }
+.manual-order-status.is-rejected { color:#fca5a5; background:rgba(239,68,68,.1); border-color:rgba(239,68,68,.25); }
+body.theme-light .manual-payment-guide,body.theme-light .manual-payment-destination,body.theme-light .manual-order-row { background:rgba(255,255,255,.34); border-color:rgba(255,255,255,.82); }
+body.theme-light .manual-steps h3,body.theme-light .manual-order-row strong,body.theme-light .manual-payment-destination p { color:#111827; }
+body.theme-light .manual-steps p,body.theme-light .manual-order-row p { color:#5f6673; }
+@media(max-width:850px){.manual-payment-grid{grid-template-columns:1fr}.manual-order-row{align-items:flex-start;flex-direction:column}}
+
 /* Minimal AuthKit/Grok product experience overrides. */
 body,
 body.theme-light,

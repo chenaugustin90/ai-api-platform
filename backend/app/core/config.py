@@ -60,6 +60,9 @@ class Settings(BaseSettings):
     stripe_price_pro: str | None = None
     stripe_price_enterprise: str | None = None
     allow_mock_subscriptions: bool = False
+    admin_emails: str = ""
+    zelle_payment_contact: str = ""
+    wechat_payment_instructions: str = ""
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 

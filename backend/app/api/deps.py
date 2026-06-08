@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.security import decode_token, hash_api_key
 from app.db.session import get_db
 from app.models import ApiKey, User
+from app.services.subscriptions import expire_manual_subscription
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
@@ -20,6 +21,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     user = db.query(User).filter(User.email == subject).first()
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    expire_manual_subscription(user, db)
     return user
 
 
@@ -40,6 +42,7 @@ def get_api_key_user(
             user = db.query(User).filter(User.email == subject, User.is_active.is_(True)).first()
             if not user:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+            expire_manual_subscription(user, db)
             return user, None
     if not raw_key:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="API key required")
@@ -52,4 +55,5 @@ def get_api_key_user(
     user = db.query(User).filter(User.id == api_key.user_id, User.is_active.is_(True)).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Inactive user")
+    expire_manual_subscription(user, db)
     return user, api_key

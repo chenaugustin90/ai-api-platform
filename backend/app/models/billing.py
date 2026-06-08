@@ -4,7 +4,7 @@ from datetime import datetime
 
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.session import Base
@@ -40,3 +40,23 @@ class BillingRecord(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
     user = relationship("User", back_populates="billing_records")
+
+
+class ManualPaymentOrder(Base):
+    __tablename__ = "manual_payment_orders"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True, nullable=False)
+    payment_method: Mapped[str] = mapped_column(String(30), index=True, nullable=False)
+    tier: Mapped[str] = mapped_column(String(50), default="pro", nullable=False)
+    amount_cents: Mapped[int] = mapped_column(Integer, default=999, nullable=False)
+    currency: Mapped[str] = mapped_column(String(12), default="usd")
+    credits: Mapped[int] = mapped_column(Integer, default=5_000)
+    proof_reference: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
+    review_note: Mapped[Optional[str]] = mapped_column(Text)
+    reviewed_by: Mapped[Optional[str]] = mapped_column(String(255))
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
+
+    user = relationship("User")

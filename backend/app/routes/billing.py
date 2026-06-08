@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import stripe
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -9,8 +9,19 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.config import get_settings
 from app.db.session import get_db
-from app.models import BillingEvent, BillingRecord, User
-from app.schemas.billing import BillingConfigStatus, BillingRecordResponse, BillingStatus, CheckoutRequest, CheckoutResponse, PortalResponse
+from app.models import BillingEvent, BillingRecord, ManualPaymentOrder, User
+from app.schemas.billing import (
+    BillingConfigStatus,
+    BillingRecordResponse,
+    BillingStatus,
+    CheckoutRequest,
+    CheckoutResponse,
+    ManualPaymentConfig,
+    ManualPaymentCreate,
+    ManualPaymentOrderResponse,
+    ManualPaymentReview,
+    PortalResponse,
+)
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 settings = get_settings()
@@ -99,6 +110,132 @@ def billing_history(user: User = Depends(get_current_user), db: Session = Depend
         .limit(50)
         .all()
     )
+
+
+@router.get("/manual/config", response_model=ManualPaymentConfig)
+def manual_payment_config(user: User = Depends(get_current_user)):
+    return ManualPaymentConfig(
+        is_admin=_is_admin(user),
+        zelle_contact=settings.zelle_payment_contact or None,
+        wechat_instructions=settings.wechat_payment_instructions or None,
+        plan={
+            "tier": "pro",
+            "name": "Pro 30-day access",
+            "amount_cents": PLAN_CATALOG["pro"]["amount_cents"],
+            "currency": "usd",
+            "credits": PLAN_CREDITS["pro"],
+            "duration_days": 30,
+        },
+    )
+
+
+@router.post("/manual/orders", response_model=ManualPaymentOrderResponse)
+def create_manual_payment_order(
+    payload: ManualPaymentCreate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    proof = payload.proof_reference.strip()
+    if len(proof) < 4:
+        raise HTTPException(status_code=400, detail="Add a payment transaction ID or clear payment reference")
+    existing = (
+        db.query(ManualPaymentOrder)
+        .filter(
+            ManualPaymentOrder.user_id == user.id,
+            ManualPaymentOrder.payment_method == payload.payment_method,
+            ManualPaymentOrder.proof_reference == proof,
+            ManualPaymentOrder.status.in_(["pending", "approved"]),
+        )
+        .first()
+    )
+    if existing:
+        raise HTTPException(status_code=409, detail="This payment reference has already been submitted")
+    order = ManualPaymentOrder(
+        user_id=user.id,
+        payment_method=payload.payment_method,
+        tier="pro",
+        amount_cents=PLAN_CATALOG["pro"]["amount_cents"],
+        credits=PLAN_CREDITS["pro"],
+        proof_reference=proof,
+    )
+    db.add(order)
+    db.commit()
+    db.refresh(order)
+    return _manual_order_response(order, user.email)
+
+
+@router.get("/manual/orders", response_model=list[ManualPaymentOrderResponse])
+def list_manual_payment_orders(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    orders = (
+        db.query(ManualPaymentOrder)
+        .filter(ManualPaymentOrder.user_id == user.id)
+        .order_by(ManualPaymentOrder.created_at.desc())
+        .limit(50)
+        .all()
+    )
+    return [_manual_order_response(order, user.email) for order in orders]
+
+
+@router.get("/manual/admin/orders", response_model=list[ManualPaymentOrderResponse])
+def list_manual_payment_orders_admin(
+    status_filter: str = "pending",
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin(user)
+    query = db.query(ManualPaymentOrder, User).join(User, User.id == ManualPaymentOrder.user_id)
+    if status_filter != "all":
+        query = query.filter(ManualPaymentOrder.status == status_filter)
+    rows = query.order_by(ManualPaymentOrder.created_at.asc()).limit(100).all()
+    return [_manual_order_response(order, order_user.email) for order, order_user in rows]
+
+
+@router.post("/manual/admin/orders/{order_id}/review", response_model=ManualPaymentOrderResponse)
+def review_manual_payment_order(
+    order_id: int,
+    payload: ManualPaymentReview,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    _require_admin(user)
+    order = db.query(ManualPaymentOrder).filter(ManualPaymentOrder.id == order_id).first()
+    if not order:
+        raise HTTPException(status_code=404, detail="Payment order not found")
+    if order.status != "pending":
+        raise HTTPException(status_code=409, detail="This payment order has already been reviewed")
+    customer = db.query(User).filter(User.id == order.user_id).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer account not found")
+
+    order.reviewed_by = user.email
+    order.reviewed_at = datetime.utcnow()
+    order.review_note = payload.note.strip() if payload.note else None
+    if payload.action == "reject":
+        order.status = "rejected"
+    else:
+        order.status = "approved"
+        current_end = customer.subscription_current_period_end
+        starts_at = current_end if current_end and current_end > datetime.utcnow() else datetime.utcnow()
+        customer.subscription_tier = "pro"
+        customer.subscription_status = "active_manual"
+        customer.subscription_current_period_end = starts_at + timedelta(days=30)
+        customer.credits_remaining += order.credits
+        db.add(
+            BillingRecord(
+                user_id=customer.id,
+                purchase_type="manual_access",
+                mode=order.payment_method,
+                tier="pro",
+                credits=order.credits,
+                amount_cents=order.amount_cents,
+                currency=order.currency,
+                status="succeeded",
+                description=f"Pro 30-day access approved via {order.payment_method.title()}",
+            )
+        )
+    db.commit()
+    db.refresh(order)
+    return _manual_order_response(order, customer.email)
 
 
 @router.post("/webhook")
@@ -623,3 +760,35 @@ def _config_error(missing: list[str]) -> dict:
         "message": "Stripe payments are not fully configured. Add the missing environment variables before starting checkout.",
         "missing": missing,
     }
+
+
+def _admin_emails() -> set[str]:
+    return {email.strip().lower() for email in settings.admin_emails.split(",") if email.strip()}
+
+
+def _is_admin(user: User) -> bool:
+    return user.email.lower() in _admin_emails()
+
+
+def _require_admin(user: User) -> None:
+    if not _is_admin(user):
+        raise HTTPException(status_code=403, detail="Administrator access required")
+
+
+def _manual_order_response(order: ManualPaymentOrder, user_email: str | None = None) -> ManualPaymentOrderResponse:
+    return ManualPaymentOrderResponse(
+        id=order.id,
+        user_id=order.user_id,
+        user_email=user_email,
+        payment_method=order.payment_method,
+        tier=order.tier,
+        amount_cents=order.amount_cents,
+        currency=order.currency,
+        credits=order.credits,
+        proof_reference=order.proof_reference,
+        status=order.status,
+        review_note=order.review_note,
+        reviewed_by=order.reviewed_by,
+        reviewed_at=order.reviewed_at,
+        created_at=order.created_at,
+    )

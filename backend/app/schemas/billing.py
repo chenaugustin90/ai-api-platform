@@ -59,3 +59,39 @@ class BillingConfigStatus(BaseModel):
     payment_methods: list[str]
     plans: dict
     credit_packs: dict
+
+
+class ManualPaymentCreate(BaseModel):
+    payment_method: Literal["zelle", "wechat"]
+    proof_reference: str
+    tier: Literal["pro"] = "pro"
+
+
+class ManualPaymentReview(BaseModel):
+    action: Literal["approve", "reject"]
+    note: str | None = None
+
+
+class ManualPaymentOrderResponse(BaseModel):
+    id: int
+    user_id: int
+    user_email: str | None = None
+    payment_method: str
+    tier: str
+    amount_cents: int
+    currency: str
+    credits: int
+    proof_reference: str
+    status: str
+    review_note: str | None = None
+    reviewed_by: str | None = None
+    reviewed_at: datetime | None = None
+    created_at: datetime
+
+
+class ManualPaymentConfig(BaseModel):
+    enabled: bool = True
+    is_admin: bool = False
+    zelle_contact: str | None = None
+    wechat_instructions: str | None = None
+    plan: dict
