@@ -260,6 +260,256 @@ body:not(.theme-light) .docs-code-block {
   }
 }
 
+/* Final spatial OS layer. This must remain the last visual authority. */
+body .page-shell {
+  background:
+    radial-gradient(44rem 34rem at 50% -10%, rgba(111, 151, 255, 0.25), transparent 72%),
+    radial-gradient(32rem 28rem at 4% 44%, rgba(39, 211, 255, 0.08), transparent 76%),
+    radial-gradient(38rem 32rem at 96% 66%, rgba(139, 92, 246, 0.1), transparent 76%),
+    linear-gradient(180deg, #020617, #040a18 52%, #020617) !important;
+}
+
+body .spatial-app-layout.app-layout {
+  width: min(88rem, calc(100vw - 2rem)) !important;
+  max-width: none !important;
+  grid-template-columns: 4.75rem minmax(0, 1fr) !important;
+}
+
+body .spatial-rail.vision-sidebar {
+  width: 4.75rem !important;
+  padding: 0.5rem !important;
+  border-color: rgba(191, 219, 254, 0.13) !important;
+  border-radius: 1.8rem !important;
+  background: rgba(7, 15, 32, 0.48) !important;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(24px) saturate(150%) !important;
+}
+
+body .spatial-rail.vision-sidebar:hover {
+  width: 12.5rem !important;
+  background: rgba(7, 15, 32, 0.8) !important;
+}
+
+body .spatial-rail .vision-nav-item {
+  min-height: 3.55rem;
+  padding: 0.42rem;
+  border-radius: 1.35rem;
+  background: transparent !important;
+}
+
+body .spatial-rail .vision-nav-item.is-active {
+  background: linear-gradient(135deg, rgba(91, 140, 255, 0.22), rgba(139, 92, 246, 0.14)) !important;
+}
+
+body .spatial-main {
+  max-width: 78rem;
+}
+
+body .spatial-main .lg-card,
+body .spatial-main .glass-panel,
+body .spatial-main .panel,
+body .spatial-main .playground-console,
+body .spatial-main .minimal-chat-card,
+body .spatial-main .provider-card {
+  border: 1px solid rgba(191, 219, 254, 0.13) !important;
+  border-radius: 1.65rem;
+  background:
+    linear-gradient(145deg, rgba(31, 50, 84, 0.27), transparent 58%),
+    rgba(7, 15, 32, 0.56) !important;
+  box-shadow:
+    0 24px 72px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.025) !important;
+  backdrop-filter: blur(24px) saturate(145%) !important;
+}
+
+body .minimal-dashboard {
+  width: min(58rem, 100%);
+  max-width: none;
+  margin: 5vh auto 0;
+  padding-top: 0;
+}
+
+body .minimal-dashboard-hero .dashboard-greeting {
+  max-width: 54rem;
+  font-size: clamp(3rem, 7vw, 6rem);
+}
+
+body .minimal-action-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+body .minimal-action-card {
+  min-height: 5.5rem;
+  padding: 0.8rem;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.7rem;
+}
+
+body .minimal-action-card span {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 auto;
+}
+
+body .minimal-action-card strong {
+  font-size: 0.86rem;
+}
+
+body .minimal-chat-card {
+  padding: 1rem;
+  border-radius: 2rem !important;
+}
+
+body .minimal-chat-input,
+body .minimal-prompt-editor {
+  min-height: 11rem !important;
+  border: 0 !important;
+  border-radius: 1.4rem !important;
+  background: rgba(2, 8, 22, 0.24) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035) !important;
+  resize: none;
+}
+
+body .minimal-playground {
+  width: min(62rem, 100%);
+  max-width: none;
+  min-height: calc(100dvh - 8rem);
+  margin: 2vh auto 0;
+  padding-top: 0;
+}
+
+body .minimal-playground > .grid {
+  display: flex;
+  flex-direction: column;
+}
+
+body .minimal-playground .playground-console {
+  order: 2;
+  border-radius: 2rem !important;
+}
+
+body .minimal-playground .playground-console + div {
+  order: 1;
+}
+
+body .minimal-playground .playground-response {
+  min-height: 14rem;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+body .minimal-playground .playground-json {
+  max-height: 28rem;
+  border: 0;
+  border-radius: 1.5rem;
+  background: rgba(2, 8, 22, 0.34);
+}
+
+body .minimal-playground .sticky-action-row {
+  position: sticky;
+  z-index: 8;
+  bottom: 1rem;
+  padding: 0.55rem 0.55rem 0.55rem 0.9rem;
+  border: 1px solid rgba(191, 219, 254, 0.14);
+  border-radius: 999px;
+  background: rgba(7, 16, 36, 0.86);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(28px) saturate(155%);
+}
+
+body .minimal-model-grid {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+body .minimal-model-grid button {
+  min-width: 7rem;
+  min-height: 2.75rem;
+  border-radius: 999px;
+}
+
+body .landing-page {
+  background:
+    radial-gradient(42rem 58rem at 50% -8%, rgba(141, 177, 255, 0.22), transparent 72%),
+    radial-gradient(34rem 26rem at 10% 45%, rgba(0, 229, 255, 0.08), transparent 72%),
+    radial-gradient(34rem 28rem at 90% 52%, rgba(139, 92, 246, 0.1), transparent 72%),
+    #020617 !important;
+}
+
+body .landing-hero.authkit-landing-hero {
+  min-height: 100dvh;
+}
+
+body .landing-hero.authkit-landing-hero h1 {
+  font-size: clamp(4.7rem, 11vw, 9.6rem);
+}
+
+@media (max-width: 760px) {
+  body .spatial-header-theme {
+    display: none;
+  }
+
+  body .spatial-header-language {
+    max-width: 7rem;
+  }
+
+  body .spatial-header-language select {
+    max-width: 4.6rem;
+  }
+
+  body .spatial-app-layout.app-layout {
+    display: block !important;
+    width: 100% !important;
+    padding: 1rem 0.75rem 7.5rem !important;
+  }
+
+  body .spatial-rail.vision-sidebar {
+    display: none !important;
+  }
+
+  body .mobile-menu-button,
+  body .mobile-nav-backdrop {
+    display: none !important;
+  }
+
+  body .mobile-dock {
+    display: grid;
+  }
+
+  body .minimal-dashboard {
+    margin-top: 1rem;
+  }
+
+  body .minimal-action-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body .minimal-action-card {
+    min-height: 4.8rem;
+  }
+
+  body .minimal-playground {
+    margin-top: 1rem;
+  }
+
+  body .minimal-model-grid {
+    overflow-x: auto;
+    justify-content: flex-start;
+    scrollbar-width: none;
+  }
+
+  body .minimal-model-grid button {
+    flex: 0 0 auto;
+  }
+}
+
 /* Spatial product shell: one quiet, cinematic system across the signed-in app. */
 :root {
   --spatial-bg: #020617;
@@ -547,6 +797,11 @@ body:not(.theme-light) .spatial-rail {
   white-space: pre-wrap;
 }
 
+.minimal-playground .playground-json.is-thinking {
+  color: rgba(191, 219, 254, 0.64);
+  animation: spatial-thinking 1.6s ease-in-out infinite;
+}
+
 .minimal-playground .playground-console .sticky-action-row {
   position: sticky;
   z-index: 8;
@@ -643,6 +898,11 @@ body:not(.theme-light) .spatial-rail {
 @keyframes spatial-float {
   0%, 100% { transform: translate3d(0, 0, 0) rotateX(0.1deg); }
   50% { transform: translate3d(0, -9px, 0) rotateX(-0.5deg); }
+}
+
+@keyframes spatial-thinking {
+  0%, 100% { opacity: 0.45; text-shadow: 0 0 0 rgba(115, 232, 255, 0); }
+  50% { opacity: 1; text-shadow: 0 0 22px rgba(115, 232, 255, 0.25); }
 }
 
 @media (max-width: 760px) {

@@ -51,6 +51,7 @@ export default function Playground() {
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState('')
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [streamedResponse, setStreamedResponse] = useState('')
 
   useEffect(() => {
     const nextConfig = ENDPOINTS[endpoint]
@@ -65,6 +66,19 @@ export default function Playground() {
     setCreditsUsed(null)
     setRequestText(formatJson(buildPayload(endpoint, nextProvider, '', nextConfig.defaults)))
   }, [endpoint])
+
+  useEffect(() => {
+    const text = response?.text || ''
+    setStreamedResponse('')
+    if (!text) return undefined
+    let index = 0
+    const timer = window.setInterval(() => {
+      index += Math.max(1, Math.ceil(text.length / 48))
+      setStreamedResponse(text.slice(0, index))
+      if (index >= text.length) window.clearInterval(timer)
+    }, 24)
+    return () => window.clearInterval(timer)
+  }, [response])
 
   useEffect(() => {
     setRequestText((current) => {
@@ -273,8 +287,8 @@ export default function Playground() {
               <MetricPill icon={Clock3} label={responseTime === null ? 'No response yet' : `${responseTime} ms`} />
               <MetricPill icon={Zap} label={creditsUsed === null ? '0 credits' : `${creditsUsed} credits used`} />
             </div>
-            <pre className={`playground-json ${response?.text ? 'is-text-response' : ''}`}>
-              {response?.text || formatJson(response || { status: 'Your generated result will appear here.' })}
+            <pre className={`playground-json ${response?.text ? 'is-text-response' : ''} ${loading ? 'is-thinking' : ''}`}>
+              {loading ? 'Thinking…' : streamedResponse || formatJson(response || { status: 'Your generated result will appear here.' })}
             </pre>
           </GlassCard>
 
