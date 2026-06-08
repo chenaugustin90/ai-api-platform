@@ -1,5 +1,6 @@
-import { AlertTriangle, BarChart3, Camera, Check, Copy, CreditCard, ExternalLink, KeyRound, Plus, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
+import { AlertTriangle, BarChart3, Camera, Check, Copy, CreditCard, ExternalLink, KeyRound, Plus, Settings, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
 import { GlassButton, GlassCard, GlassInput } from '../components/ui'
 import { useToast } from '../components/ToastProvider'
@@ -137,6 +138,7 @@ export default function Account() {
         <div className="account-status-strip">
           <span><ShieldCheck className="h-4 w-4" /> {activeKeys} active keys</span>
           <span><CreditCard className="h-4 w-4" /> {formatPlan(billing.subscription_tier)}</span>
+          <GlassButton as={Link} to="/settings" variant="secondary"><Settings className="h-4 w-4" /> Settings</GlassButton>
         </div>
       </div>
 

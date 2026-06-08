@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { Suspense, lazy } from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import './styles.css'
@@ -10,26 +10,26 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { getStoredTheme } from './components/ThemeToggle'
 import { ToastProvider } from './components/ToastProvider'
 import { AuthProvider } from './context/AuthContext'
-import Account from './pages/Account'
-import ApiKeys from './pages/ApiKeys'
-import Dashboard from './pages/Dashboard'
-import Docs from './pages/Docs'
-import History from './pages/History'
-import ImageGeneration from './pages/ImageGeneration'
-import Landing from './pages/Landing'
-import Login from './pages/Login'
-import Playground from './pages/Playground'
-import ProviderSettings from './pages/ProviderSettings'
-import PromptLibrary from './pages/PromptLibrary'
-import Pricing from './pages/Pricing'
-import PaymentCancel from './pages/PaymentCancel'
-import PaymentSuccess from './pages/PaymentSuccess'
-import Register from './pages/Register'
-import SharedPreview from './pages/SharedPreview'
-import Settings from './pages/Settings'
-import Upgrade from './pages/Upgrade'
-import Usage from './pages/Usage'
-import VideoGeneration from './pages/VideoGeneration'
+const Account = lazy(() => import('./pages/Account'))
+const ApiKeys = lazy(() => import('./pages/ApiKeys'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Docs = lazy(() => import('./pages/Docs'))
+const History = lazy(() => import('./pages/History'))
+const ImageGeneration = lazy(() => import('./pages/ImageGeneration'))
+const Landing = lazy(() => import('./pages/Landing'))
+const Login = lazy(() => import('./pages/Login'))
+const Playground = lazy(() => import('./pages/Playground'))
+const ProviderSettings = lazy(() => import('./pages/ProviderSettings'))
+const PromptLibrary = lazy(() => import('./pages/PromptLibrary'))
+const Pricing = lazy(() => import('./pages/Pricing'))
+const PaymentCancel = lazy(() => import('./pages/PaymentCancel'))
+const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
+const Register = lazy(() => import('./pages/Register'))
+const SharedPreview = lazy(() => import('./pages/SharedPreview'))
+const Settings = lazy(() => import('./pages/Settings'))
+const Upgrade = lazy(() => import('./pages/Upgrade'))
+const Usage = lazy(() => import('./pages/Usage'))
+const VideoGeneration = lazy(() => import('./pages/VideoGeneration'))
 
 if (getStoredTheme() === 'light') {
   document.body.classList.add('theme-light')
@@ -74,7 +74,9 @@ ReactDOM.createRoot(document.getElementById('root')).render(
       <ToastProvider>
         <I18nTextSync />
         <LiquidGlassEffects />
-        <RouterProvider router={router} />
+        <Suspense fallback={<div className="app-route-loading"><span /></div>}>
+          <RouterProvider router={router} />
+        </Suspense>
       </ToastProvider>
     </AuthProvider>
   </React.StrictMode>

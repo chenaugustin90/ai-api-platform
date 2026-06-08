@@ -40,6 +40,19 @@ const GENERATOR_CONFIG = {
     },
     prompt: 'A cinematic VisionOS glass console for an AI API platform',
     extra: { size: '1024x1024' }
+  },
+  video: {
+    label: 'Video',
+    path: '/api/generate/video',
+    credits: 50,
+    providers: ['runway', 'kling', 'veo'],
+    models: {
+      runway: ['gen-4'],
+      kling: ['kling-v2'],
+      veo: ['veo-3']
+    },
+    prompt: 'A cinematic reveal of a spatial AI interface floating in a dark studio.',
+    extra: { duration_seconds: 5 }
   }
 }
 
@@ -273,18 +286,40 @@ export default function Dashboard() {
       <DashboardHero user={user} usage={usage} billing={data.billing} recentGenerations={recentGenerations} />
       <MinimalStartActions />
       <GlassCard className="minimal-chat-card" as="form" onSubmit={runGeneration}>
-        <p className="eyebrow mb-3">Prompt</p>
+        <div className="workspace-mode-switch" role="tablist" aria-label="Generation type">
+          {Object.entries(GENERATOR_CONFIG).map(([id, config]) => {
+            const Icon = id === 'text' ? SquareTerminal : id === 'image' ? Image : Video
+            return (
+              <button key={id} type="button" role="tab" aria-selected={generator.endpoint === id} className={generator.endpoint === id ? 'is-active' : ''} onClick={() => updateGenerator({ endpoint: id })}>
+                <Icon className="h-4 w-4" />
+                {config.label}
+              </button>
+            )
+          })}
+        </div>
         <GlassTextarea
           className="minimal-chat-input"
           value={generator.prompt}
           onChange={(event) => updateGenerator({ prompt: event.target.value })}
-          placeholder="Describe the API, image, workflow, or developer experience you want to create..."
+          placeholder="Ask anything..."
         />
         <div className="minimal-chat-footer">
-          <span>{Number(usage.credits_remaining || 0).toLocaleString()} credits available</span>
+          <div className="workspace-route-controls">
+            <GlassSelect
+              value={generator.provider}
+              options={GENERATOR_CONFIG[generator.endpoint].providers}
+              onChange={(event) => updateGenerator({ provider: event.target.value })}
+            />
+            <GlassSelect
+              value={generator.model}
+              options={GENERATOR_CONFIG[generator.endpoint].models[generator.provider] || []}
+              onChange={(event) => updateGenerator({ model: event.target.value })}
+            />
+            <span>{Number(usage.credits_remaining || 0).toLocaleString()} credits</span>
+          </div>
           <GlassButton type="submit" disabled={generatorLoading}>
             <Play className="h-4 w-4" />
-            {generatorLoading ? 'Generating' : 'Generate Text'}
+            {generatorLoading ? 'Generating' : `Generate ${GENERATOR_CONFIG[generator.endpoint].label}`}
           </GlassButton>
         </div>
         {(generatorLoading || generationProgress > 0) && (
@@ -412,10 +447,10 @@ function DashboardHero({ user, usage, billing, recentGenerations }) {
 
 function MinimalStartActions() {
   const actions = [
-    { label: 'Generate Text', href: '/playground', icon: SquareTerminal },
     { label: 'Generate Image', href: '/images', icon: Image },
-    { label: 'API Keys', href: '/api-keys', icon: KeyRound },
-    { label: 'Docs', href: '/docs', icon: BookOpen }
+    { label: 'Create Video', href: '/videos', icon: Video },
+    { label: 'API Playground', href: '/playground', icon: SquareTerminal },
+    { label: 'Prompt Library', href: '/prompt-library', icon: BookOpen }
   ]
   return (
     <div className="minimal-action-grid">

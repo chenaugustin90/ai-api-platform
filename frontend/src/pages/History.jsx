@@ -1,4 +1,5 @@
 import { Copy, Image, RefreshCw, Search, Share2, Sparkles, Trash2, Type } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { api } from '../api/client'
 import { useToast } from '../components/ToastProvider'
@@ -218,20 +219,20 @@ function HistorySection({ icon: Icon, title, count, children }) {
 
 function TextHistoryCard({ item, loading, sharing, onShare, onRegenerate, onDelete }) {
   return (
-    <article className="history-card">
+    <motion.article className="history-card" initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 140, damping: 24 }}>
       <div>
         <p className="history-prompt">{item.prompt}</p>
         <p className="history-response">{item.response || item.text}</p>
       </div>
       <HistoryMeta item={item} />
       <HistoryActions value={item.response || item.text || ''} loading={loading} sharing={sharing} onShare={onShare} onRegenerate={onRegenerate} onDelete={onDelete} />
-    </article>
+    </motion.article>
   )
 }
 
 function ImageHistoryCard({ item, loading, sharing, onShare, onRegenerate, onDelete }) {
   return (
-    <article className="history-card history-image-card">
+    <motion.article className="history-card history-image-card" initial={{ opacity: 0, y: 14, scale: 0.98 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 130, damping: 24 }}>
       <img src={item.output_url} alt={item.prompt} />
       <div>
         <p className="history-prompt">{item.prompt}</p>
@@ -239,7 +240,7 @@ function ImageHistoryCard({ item, loading, sharing, onShare, onRegenerate, onDel
       </div>
       <HistoryMeta item={item} />
       <HistoryActions value={item.output_url || ''} loading={loading} sharing={sharing} onShare={onShare} onRegenerate={onRegenerate} onDelete={onDelete} />
-    </article>
+    </motion.article>
   )
 }
 

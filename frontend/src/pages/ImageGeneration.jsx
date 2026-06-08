@@ -1,4 +1,5 @@
 import { Copy, Download, Expand, Heart, RefreshCw, Share2, Sparkles, Trash2, Wand2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import AiLoading from '../components/AiLoading'
@@ -252,7 +253,16 @@ function ImageCard({ image, onShare, onRegenerate, onDelete }) {
   }
 
   return (
-    <GlassCard as="article" variant="media" className="image-card" data-magnetic>
+    <GlassCard
+      as={motion.article}
+      variant="media"
+      className="image-card"
+      data-magnetic
+      initial={{ opacity: 0, y: 18, scale: 0.98 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ type: 'spring', stiffness: 120, damping: 22 }}
+    >
       {image.output_url ? (
         <img src={image.output_url} alt={image.prompt} />
       ) : (

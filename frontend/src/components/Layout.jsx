@@ -1,31 +1,26 @@
-import { BookOpen, History as HistoryIcon, Image, KeyRound, LogOut, MessageSquareText, Settings, UserCircle, Zap } from 'lucide-react'
+import { History as HistoryIcon, Image, KeyRound, MessageSquareText, Sparkles, UserCircle, Zap } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import AiStatusIndicator from './AiStatusIndicator'
 import CommandPalette from './CommandPalette'
 import LanguageSwitcher from './LanguageSwitcher'
 import ThemeToggle from './ThemeToggle'
-import { GlassButton, GlassCard } from './ui'
 
-const links = [
+const dockLinks = [
   ['nav.chat', '/dashboard', MessageSquareText],
+  ['nav.playground', '/playground', Sparkles],
   ['nav.images', '/images', Image],
   ['nav.history', '/history', HistoryIcon],
-  ['nav.apiKeys', '/api-keys', KeyRound],
-  ['nav.apiDocs', '/docs', BookOpen],
-  ['nav.settings', '/settings', Settings],
   ['nav.account', '/account', UserCircle]
 ]
 
-const dockLinks = links.filter(([, href]) => ['/dashboard', '/images', '/history', '/settings', '/account'].includes(href))
-
 export default function Layout() {
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const { t } = useTranslation()
-  const navigate = useNavigate()
   const location = useLocation()
   const [creditsRemaining, setCreditsRemaining] = useState(user?.credits_remaining ?? null)
 
@@ -56,66 +51,38 @@ export default function Layout() {
                 {Number(creditsRemaining).toLocaleString()} {t('nav.credits')}
               </span>
             )}
-            <span className="hidden max-w-[260px] truncate rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[#A1A1AA] sm:inline">{user?.email}</span>
             <LanguageSwitcher className="spatial-header-language" />
-            <GlassButton
-              variant="secondary"
-              className="header-logout hidden sm:inline-flex"
-              onClick={() => {
-                logout()
-                navigate('/login')
-              }}
-            >
-              <LogOut className="h-4 w-4" /> {t('nav.logout')}
-            </GlassButton>
+            <Link to="/account" className="spatial-profile-link" aria-label={user?.email || t('nav.account')} data-magnetic>
+              <UserCircle className="h-5 w-5" />
+            </Link>
           </div>
         </div>
       </header>
       <div className="app-layout spatial-app-layout">
-        <GlassCard as="nav" className="vision-sidebar spatial-rail">
-          {links.map(([labelKey, href, Icon]) => (
-            <NavLink
-              key={href}
-              to={href}
-              className={({ isActive }) =>
-                `vision-nav-item ${isActive ? 'is-active' : ''}`
-              }
-              data-magnetic
-            >
-              <span className="vision-nav-icon">
-                <Icon className="h-4 w-4" />
-              </span>
-              <span className="vision-nav-label">{t(labelKey)}</span>
-            </NavLink>
-          ))}
-          <LanguageSwitcher className="mt-2 w-full justify-center sm:hidden" />
-          <ThemeToggle className="mt-2 w-full justify-center sm:hidden" />
-          <button
-            type="button"
-            className="vision-nav-item sm:hidden"
-            onClick={() => {
-              logout()
-              navigate('/login')
-            }}
-          >
-            <span className="vision-nav-icon">
-              <LogOut className="h-4 w-4" />
-            </span>
-            <span className="vision-nav-label">{t('nav.logout')}</span>
-          </button>
-        </GlassCard>
-        <main key={location.pathname} className="page-transition spatial-main">
+        <motion.main
+          key={location.pathname}
+          className="page-transition spatial-main"
+          initial={{ opacity: 0, y: 12, scale: 0.995 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ type: 'spring', stiffness: 150, damping: 24, mass: 0.8 }}
+        >
           <Outlet />
-        </main>
+        </motion.main>
       </div>
-      <nav className="mobile-dock" aria-label={t('dom.Navigation')}>
+      <motion.nav
+        className="mobile-dock app-floating-dock"
+        aria-label={t('dom.Navigation')}
+        initial={{ opacity: 0, y: 26 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ type: 'spring', stiffness: 140, damping: 22, delay: 0.12 }}
+      >
         {dockLinks.map(([labelKey, href, Icon]) => (
           <NavLink key={href} to={href} className={({ isActive }) => `mobile-dock-item ${isActive ? 'is-active' : ''}`}>
             <span><Icon className="h-5 w-5" /></span>
             <small>{t(labelKey)}</small>
           </NavLink>
         ))}
-      </nav>
+      </motion.nav>
     </div>
   )
 }
