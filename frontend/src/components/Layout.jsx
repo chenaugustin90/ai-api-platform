@@ -1,26 +1,18 @@
-import { FileCode2, History as HistoryIcon, Image, KeyRound, Menu, MessageSquareText, Settings, Sparkles, UserCircle } from 'lucide-react'
+import { FileCode2, KeyRound, Menu, Settings, Sparkles, UserCircle } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, Outlet, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import CommandPalette from './CommandPalette'
-
-const dockLinks = [
-  ['nav.chat', '/dashboard', MessageSquareText],
-  ['nav.playground', '/playground', Sparkles],
-  ['nav.images', '/images', Image],
-  ['nav.history', '/history', HistoryIcon],
-  ['nav.account', '/account', UserCircle]
-]
 
 export default function Layout() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const location = useLocation()
-  const isChatRoute = location.pathname === '/playground'
-  const isHistoryRoute = location.pathname === '/history' || location.pathname === '/dashboard'
+  const isChatRoute = location.pathname === '/playground' || location.pathname === '/dashboard'
+  const isHistoryRoute = location.pathname === '/history'
   const [creditsRemaining, setCreditsRemaining] = useState(user?.credits_remaining ?? null)
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -64,20 +56,6 @@ export default function Layout() {
           <Outlet />
         </motion.main>
       </div>
-      <motion.nav
-        className="mobile-dock app-floating-dock"
-        aria-label={t('dom.Navigation')}
-        initial={{ opacity: 0, y: 26 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 140, damping: 22, delay: 0.12 }}
-      >
-        {dockLinks.map(([labelKey, href, Icon]) => (
-          <NavLink key={href} to={href} className={({ isActive }) => `mobile-dock-item ${isActive ? 'is-active' : ''}`}>
-            <span><Icon className="h-5 w-5" /></span>
-            <small>{t(labelKey)}</small>
-          </NavLink>
-        ))}
-      </motion.nav>
     </div>
   )
 }

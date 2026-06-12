@@ -28,7 +28,8 @@ export function clearToken() {
 export async function api(path, options = {}) {
   if (!API_URL) throw new Error('Missing BACKEND_URL. Configure the production backend URL before using the API.')
   const headers = new Headers(options.headers || {})
-  if (!headers.has('Content-Type') && options.body) headers.set('Content-Type', 'application/json')
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+  if (!headers.has('Content-Type') && options.body && !isFormData) headers.set('Content-Type', 'application/json')
   const token = getToken()
   if (token) headers.set('Authorization', `Bearer ${token}`)
   const response = await fetch(`${API_URL}${path}`, { ...options, headers })

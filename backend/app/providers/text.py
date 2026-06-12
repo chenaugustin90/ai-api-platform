@@ -13,7 +13,7 @@ settings = get_settings()
 logger = logging.getLogger("app.providers")
 
 TEXT_DEFAULT_MODELS = {
-    "openai": "gpt-4o-mini",
+    "openai": "gpt-4.1-mini",
     "deepseek": "deepseek-v4-pro",
     "claude": "claude-haiku-4-5",
     "qwen": "qwen-plus",
@@ -36,6 +36,8 @@ async def generate_text(provider: str, prompt: str, model: str | None, max_token
         raise HTTPException(status_code=400, detail="Unsupported text provider")
 
     selected_model = model or TEXT_DEFAULT_MODELS[provider]
+    if provider == "openai" and selected_model == "gpt-4o-mini":
+        selected_model = "gpt-4.1-mini"
     execution_mode = provider_execution_mode(provider)
     logger.info(
         "Text generation provider=%s model=%s execution_mode=%s",

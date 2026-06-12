@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import logging
 
+import httpx
+from fastapi import File, UploadFile
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -12,6 +15,7 @@ from app.providers.image import generate_image
 from app.providers.text import generate_text
 from app.providers.utils import provider_execution_mode
 from app.providers.video import generate_video
+from app.core.config import get_settings
 from app.schemas.generation import (
     GenerationResponse,
     ImageGenerationRequest,
@@ -25,6 +29,7 @@ from app.services.usage import estimate_text_tokens, record_usage
 
 router = APIRouter(prefix="/generate", tags=["generation"])
 logger = logging.getLogger("app.providers")
+settings = get_settings()
 
 
 @router.post("/text", response_model=TextGenerationResponse)
@@ -128,6 +133,30 @@ async def video(payload: VideoGenerationRequest, auth=Depends(get_api_key_user),
     )
 
 
+@router.post("/transcribe")
+async def transcribe(audio: UploadFile = File(...), auth=Depends(get_api_key_user)):
+    _user, _ = auth
+    if not settings.openai_api_key:
+        raise HTTPException(status_code=503, detail="Voice transcription is unavailable until OpenAI is configured.")
+    audio_bytes = await audio.read()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="The recorded audio was empty.")
+    files = {"file": (audio.filename or "voice.webm", audio_bytes, audio.content_type or "audio/webm")}
+    candidates = [settings.openai_transcription_model, "whisper-1"]
+    async with httpx.AsyncClient(timeout=90) as client:
+        for index, model in enumerate(candidates):
+            response = await client.post(
+                f"{settings.openai_base_url.rstrip('/')}/audio/transcriptions",
+                headers={"Authorization": f"Bearer {settings.openai_api_key}"},
+                data={"model": model},
+                files=files,
+            )
+            if response.status_code < 400:
+                return {"text": response.json().get("text", ""), "model": model}
+            if index == len(candidates) - 1:
+                raise HTTPException(status_code=502, detail="Voice transcription failed. Please try again.")
+
+
 @router.get("/history", response_model=list[GenerationResponse])
 def history(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return db.query(Generation).filter(Generation.user_id == user.id).order_by(Generation.created_at.desc()).limit(100).all()
@@ -142,7 +171,7 @@ def _estimated_text_model(provider: str, model: str | None) -> str | None:
     if model:
         return model
     return {
-        "openai": "gpt-4o-mini",
+        "openai": "gpt-4.1-mini",
         "deepseek": "deepseek-v4-pro",
         "claude": "claude-haiku-4-5",
         "qwen": "qwen-plus",

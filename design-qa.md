@@ -9,18 +9,18 @@
   - `design-evidence/history-mobile-final.png`
   - `design-evidence/chat-plus-mobile-final.png`
 - Viewport: 430 x 932
-- State: authenticated native app shell, dark History home, Chat Plus panel, Profile hub, and native authentication flow
+- State: authenticated native app shell, direct-to-Chat home, History, Chat Plus panel, Profile hub, and native authentication flow
 
 **Full-view comparison evidence**
 
-The source and implementation were reviewed at the same mobile viewport. The implementation matches the source's dominant composition: near-black full-screen canvas, oversized rounded conversation tiles, floating circular actions, a glass view menu, and a bottom-sheet-style AI tool selector. The product architecture now opens as an app rather than a marketing website or admin dashboard.
+The source and implementation were reviewed at the same mobile viewport. The implementation matches the source's dominant composition: a continuous full-screen canvas, floating circular actions, a restrained glass model selector, and a bottom-sheet-style AI tool selector. The product now opens directly into creation rather than a marketing website, navigation dock, or admin dashboard.
 
 **Focused region comparison evidence**
 
 - History header and view menu: matched circular controls, compact floating menu, subdued glass border, large SF-style title, and generous black space.
 - Chat Plus panel: matched bottom floating panel, attachment row, large rounded cells, restrained dark palette, and low-contrast layered glass.
-- Light theme: checked separately in-browser; it uses a clean warm-white canvas, gray typography, subtle borders, and white glass rather than simple color inversion.
-- App architecture: `/dashboard` is the native History home, `/playground` is the immersive chat/create surface, and `/account` is the grouped Profile and membership hub.
+- Light theme: checked separately in-browser; it uses one clean warm-white canvas, high-contrast typography, subtle borders, and white glass rather than simple color inversion or gray header bands.
+- App architecture: `/dashboard` and `/playground` are the immersive chat/create surface, `/history` is the native masonry history view, and `/account` is the grouped Profile and membership hub.
 - Preserved product depth: detailed Account, provider health, usage, billing, and the former workspace dashboard remain available through Settings instead of competing with the primary creation experience.
 
 **Required fidelity surfaces**
@@ -37,17 +37,16 @@ No actionable P0, P1, or P2 mismatches remain.
 
 **Patches made**
 
-- Removed the legacy dashboard header and dock from immersive History and Chat routes.
+- Removed the bottom navigation dock and made the authenticated entry route open directly into Chat.
+- Removed legacy constrained canvases and header backgrounds that caused visible color seams in both themes.
 - Added true dark/light native surfaces.
 - Added masonry History cards, Spotlight search, view menu, context actions, and profile entry.
-- Added Siri-style Chat canvas, floating composer, model selector, attachment tools, AI tools, voice state, and advanced developer sheet.
+- Added Siri-style Chat canvas, floating composer, model selector, attachment tools, AI tools, real audio recording/transcription, and advanced developer sheet.
+- Corrected image generation routing so Image mode always requests an image model and can fall back across supported OpenAI image models.
+- Replaced the nested language menu with a compact one-tap English/中文 switch.
 - Added a native Profile hub with credits, subscription, billing, API key, documentation, theme, language, and sign-out entry points.
 - Replaced the legacy authentication composition with a focused black/white native app access flow.
 - Added standalone PWA metadata, safe-area viewport support, and app-aware theme colors.
 - Preserved existing generation, JWT authentication, history storage, sharing, and API request behavior.
-
-**Follow-up polish**
-
-- P3: Native camera, photo-library, file-picker, and speech-recognition APIs require a native wrapper or browser permission integration; the current controls provide the finished interaction surface.
 
 final result: passed

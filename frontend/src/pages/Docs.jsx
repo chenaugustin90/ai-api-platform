@@ -34,7 +34,7 @@ const endpointDocs = [
     request: { provider: 'openai', model: null, prompt: 'Write a concise launch note for our API.', max_tokens: 512 },
     response: {
       provider: 'openai',
-      model: 'gpt-4o-mini',
+      model: 'gpt-4.1-mini',
       text: 'Launch faster with one metered API for text, image, and video generation.',
       usage: { prompt_tokens: 11, completion_tokens: 18, total_tokens: 29 }
     }

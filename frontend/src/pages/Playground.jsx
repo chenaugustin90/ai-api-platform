@@ -1,4 +1,4 @@
-import { BrainCircuit, Camera, Check, ChevronDown, Code2, Copy, FileText, Globe2, Image as ImageIcon, Languages, Mic, Paperclip, Plus, Search, Send, Sparkles, TerminalSquare, Video, WandSparkles, X } from 'lucide-react'
+import { BrainCircuit, Camera, Check, ChevronDown, Code2, Copy, FileText, Globe2, Image as ImageIcon, Languages, Mic, Paperclip, Plus, Search, Send, Sparkles, TerminalSquare, UserCircle, Video, WandSparkles, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -7,9 +7,10 @@ import { API_URL, api, apiKeyRequest, getToken } from '../api/client'
 import { saveTextGenerationHistory } from '../utils/generationHistory'
 
 const MODEL_CHOICES = [
-  { id: 'gpt-4o-mini', label: 'GPT-4o', provider: 'openai', model: 'gpt-4o-mini', available: true },
+  { id: 'gpt-4.1-mini', label: 'GPT-4.1 mini', provider: 'openai', model: 'gpt-4.1-mini', available: true },
   { id: 'claude', label: 'Claude', provider: 'claude', model: 'claude-haiku-4-5', available: true },
   { id: 'deepseek', label: 'DeepSeek', provider: 'deepseek', model: 'deepseek-chat', available: true },
+  { id: 'openai-image', label: 'Image', provider: 'openai', model: 'gpt-image-2', endpoint: 'image', available: true },
   { id: 'gemini', label: 'Gemini', available: false },
   { id: 'grok', label: 'Grok', available: false },
   { id: 'flux', label: 'Flux', provider: 'flux', model: '', endpoint: 'image', available: true },
@@ -43,7 +44,9 @@ export default function Playground() {
   const cameraRef = useRef(null)
   const photosRef = useRef(null)
   const filesRef = useRef(null)
-  const recognitionRef = useRef(null)
+  const recorderRef = useRef(null)
+  const recordingStreamRef = useRef(null)
+  const audioChunksRef = useRef([])
 
   const config = ENDPOINTS[endpoint]
   const payload = useMemo(() => buildPayload(endpoint, provider, model, prompt), [endpoint, provider, model, prompt])
@@ -72,9 +75,17 @@ export default function Playground() {
   }
 
   function chooseTool(tool) {
-    if (tool.endpoint) setEndpoint(tool.endpoint)
+    if (tool.endpoint === 'image') {
+      setEndpoint('image')
+      setProvider('openai')
+      setModel('gpt-image-2')
+      setSelectedModel('openai-image')
+    } else if (tool.endpoint) {
+      setEndpoint(tool.endpoint)
+    }
     if (tool.prefix) setPrompt((current) => `${tool.prefix}${current}`)
     if (tool.id === 'voice') toggleVoice()
+    if (tool.id === 'advanced') setAdvancedOpen(true)
     setPlusOpen(false)
   }
 
@@ -99,33 +110,43 @@ export default function Playground() {
     event.target.value = ''
   }
 
-  function toggleVoice() {
+  async function toggleVoice() {
     if (voiceActive) {
-      recognitionRef.current?.stop?.()
-      setVoiceActive(false)
+      recorderRef.current?.stop?.()
       return
     }
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SpeechRecognition) {
-      setError(t('dom.Voice input is not supported in this browser.'))
-      return
-    }
-    const recognition = new SpeechRecognition()
-    recognition.lang = navigator.language || 'en-US'
-    recognition.interimResults = true
-    recognition.continuous = false
-    recognition.onresult = (event) => {
-      const transcript = Array.from(event.results).map((result) => result[0]?.transcript || '').join('')
-      setPrompt(transcript)
-    }
-    recognition.onend = () => setVoiceActive(false)
-    recognition.onerror = (event) => {
+    setError('')
+    try {
+      if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) throw new Error('unsupported')
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const recorder = new MediaRecorder(stream)
+      audioChunksRef.current = []
+      recordingStreamRef.current = stream
+      recorderRef.current = recorder
+      recorder.ondataavailable = (event) => {
+        if (event.data?.size) audioChunksRef.current.push(event.data)
+      }
+      recorder.onstop = async () => {
+        recordingStreamRef.current?.getTracks().forEach((track) => track.stop())
+        recordingStreamRef.current = null
+        setVoiceActive(false)
+        const blob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' })
+        if (!blob.size) return
+        const form = new FormData()
+        form.append('audio', blob, `voice.${blob.type.includes('mp4') ? 'm4a' : 'webm'}`)
+        try {
+          const result = await api('/api/generate/transcribe', { method: 'POST', body: form })
+          setPrompt((current) => `${current}${current ? ' ' : ''}${result.text || ''}`.trim())
+        } catch (transcriptionError) {
+          setError(transcriptionError.message)
+        }
+      }
+      recorder.start()
+      setVoiceActive(true)
+    } catch (event) {
       setVoiceActive(false)
-      setError(event.error === 'not-allowed' ? t('dom.Microphone permission was denied.') : t('dom.Voice input could not start.'))
+      setError(event?.name === 'NotAllowedError' ? t('dom.Microphone permission was denied.') : t('dom.Voice input could not start.'))
     }
-    recognitionRef.current = recognition
-    setVoiceActive(true)
-    recognition.start()
   }
 
   async function sendRequest(event) {
@@ -158,13 +179,13 @@ export default function Playground() {
   return (
     <div className="native-chat-page">
       <header className="native-chat-topbar">
-        <Link to="/history" className="native-round-button" aria-label={t('dom.Close')}><X /></Link>
+        <Link to="/history" className="native-round-button" aria-label={t('dom.History')}><X /></Link>
         <button type="button" className="native-model-capsule" onClick={() => setPlusOpen(true)}>
           <Sparkles />
           <span>{MODEL_CHOICES.find((choice) => choice.id === selectedModel)?.label || provider}</span>
           <ChevronDown />
         </button>
-        <button type="button" className="native-round-button" onClick={() => setAdvancedOpen((value) => !value)} aria-label={t('dom.Advanced')}><TerminalSquare /></button>
+        <Link to="/account" className="native-round-button" aria-label={t('nav.account')}><UserCircle /></Link>
       </header>
 
       <main className="native-chat-canvas">
@@ -228,7 +249,8 @@ function PlusPanel({ selectedModel, onModel, onTool, onAttach, onClose, t }) {
     { id: 'code', label: t('dom.Code'), icon: Code2, prefix: 'Write production-ready code for: ' },
     { id: 'translate', label: t('dom.Translate'), icon: Languages, prefix: 'Translate this naturally: ' },
     { id: 'analyze', label: t('dom.Analyze'), icon: BrainCircuit, prefix: 'Analyze this carefully: ' },
-    { id: 'search', label: t('dom.Search Web'), icon: Globe2, prefix: 'Research and summarize: ' }
+    { id: 'search', label: t('dom.Search Web'), icon: Globe2, prefix: 'Research and summarize: ' },
+    { id: 'advanced', label: t('dom.Advanced'), icon: TerminalSquare }
   ]
   return (
     <div className="native-modal-scrim native-plus-scrim" onClick={onClose}>

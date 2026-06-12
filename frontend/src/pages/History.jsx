@@ -142,7 +142,7 @@ export default function History({ home = false }) {
       </AnimatePresence>
 
       <main className={`native-history-grid ${view === 'list' ? 'is-list' : ''}`}>
-        <Link to="/playground" className="native-history-card native-new-card">
+        <Link to="/dashboard" className="native-history-card native-new-card">
           <span>{formatDay(new Date().toISOString())}</span>
           <strong>{t('dom.New Conversation')}</strong>
           <Sparkles />
@@ -173,7 +173,7 @@ export default function History({ home = false }) {
 
       <div className="native-history-actions">
         <button type="button" className="native-round-button" onClick={() => setSearchOpen(true)}><Search /></button>
-        <Link to="/playground" className="native-round-button native-compose-button"><Pencil /></Link>
+        <Link to="/dashboard" className="native-round-button native-compose-button"><Pencil /></Link>
       </div>
 
       <AnimatePresence>

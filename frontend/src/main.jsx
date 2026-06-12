@@ -54,7 +54,7 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { path: '/dashboard', element: <History home /> },
+      { path: '/dashboard', element: <Playground /> },
       { path: '/api-keys', element: <ApiKeys /> },
       { path: '/pricing', element: <Pricing /> },
       { path: '/billing/success', element: <PaymentSuccess /> },

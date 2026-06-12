@@ -18,8 +18,8 @@ PROVIDER_DETAILS = {
     "openai": {
         "name": "OpenAI",
         "env_var": "OPENAI_API_KEY",
-        "models": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-image-2"],
-        "test_model": "gpt-4o-mini",
+        "models": ["gpt-4.1-mini", "gpt-image-2"],
+        "test_model": "gpt-4.1-mini",
         "docs_url": "https://platform.openai.com/docs",
         "setup_steps": [
             "Create an OpenAI platform API key.",

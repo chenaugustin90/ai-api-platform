@@ -71,7 +71,7 @@ X-API-Key: ai_live_...
 
 {
   "provider": "openai",
-  "model": "gpt-4o-mini",
+  "model": "gpt-4.1-mini",
   "prompt": "Draft launch copy for our AI API",
   "max_tokens": 512
 }`}</pre>

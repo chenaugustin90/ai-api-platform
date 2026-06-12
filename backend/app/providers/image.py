@@ -13,7 +13,7 @@ from app.providers.utils import provider_not_configured, provider_request_failed
 
 settings = get_settings()
 logger = logging.getLogger("app.providers")
-OPENAI_IMAGE_FALLBACK_MODEL = "gpt-image-1.5"
+OPENAI_IMAGE_FALLBACK_MODELS = ["gpt-image-1.5", "gpt-image-1"]
 
 IMAGE_DEFAULT_MODELS = {
     "openai": settings.openai_image_model,
@@ -47,19 +47,17 @@ async def _openai_image(prompt: str, model: str, size: str, quality: str, count:
                 headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
                 json=payload,
             )
-            if _should_fallback_openai_image_model(response, model):
-                logger.warning(
-                    "OpenAI image model %s is unavailable; falling back to %s.",
-                    model,
-                    OPENAI_IMAGE_FALLBACK_MODEL,
-                )
-                payload["model"] = OPENAI_IMAGE_FALLBACK_MODEL
+            for fallback_model in OPENAI_IMAGE_FALLBACK_MODELS:
+                if not _should_fallback_openai_image_model(response, payload["model"]):
+                    break
+                logger.warning("OpenAI image model %s is unavailable; falling back to %s.", payload["model"], fallback_model)
+                payload["model"] = fallback_model
                 response = await client.post(
                     f"{settings.openai_base_url.rstrip('/')}/images/generations",
                     headers={"Authorization": f"Bearer {settings.openai_api_key}", "Content-Type": "application/json"},
                     json=payload,
                 )
-                model = OPENAI_IMAGE_FALLBACK_MODEL
+                model = fallback_model
     except httpx.TimeoutException:
         raise provider_timeout("openai")
     except httpx.RequestError as exc:
@@ -125,8 +123,6 @@ def _flux_endpoint(model: str) -> str:
 
 def _should_fallback_openai_image_model(response: httpx.Response, model: str) -> bool:
     if response.status_code not in {400, 404}:
-        return False
-    if model == OPENAI_IMAGE_FALLBACK_MODEL:
         return False
     if not model.startswith("gpt-image-"):
         return False
