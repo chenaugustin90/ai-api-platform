@@ -1,12 +1,15 @@
-import { Copy, Image, RefreshCw, Search, Share2, Sparkles, Trash2, Type } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { Copy, Grid2X2, Image as ImageIcon, List, MoreHorizontal, Pencil, Pin, PinOff, RefreshCw, Search, Share2, SlidersHorizontal, Sparkles, Trash2, UserCircle, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { api } from '../api/client'
+import ThemeToggle from '../components/ThemeToggle'
 import { useToast } from '../components/ToastProvider'
-import { GlassButton, GlassCard, GlassInput } from '../components/ui'
 import { addImagesToHistory, deleteImageHistory, deleteTextGenerationHistory, loadImageHistory, loadTextGenerationHistory, saveTextGenerationHistory } from '../utils/generationHistory'
 import { createShareLink } from '../utils/share'
 
+const META_KEY = 'ai_native_history_meta'
 const STYLE_PROMPTS = {
   cinematic: 'Cinematic lighting, premium composition, rich depth, refined color grading.',
   photoreal: 'Photorealistic rendering, natural materials, realistic optics, high detail.',
@@ -16,285 +19,204 @@ const STYLE_PROMPTS = {
 }
 
 export default function History() {
+  const { t } = useTranslation()
   const toast = useToast()
   const [textItems, setTextItems] = useState([])
   const [imageItems, setImageItems] = useState([])
   const [query, setQuery] = useState('')
+  const [view, setView] = useState('grid')
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [contextItem, setContextItem] = useState(null)
   const [loadingId, setLoadingId] = useState('')
   const [sharingId, setSharingId] = useState('')
+  const [meta, setMeta] = useState(() => readMeta())
+  const longPressTimer = useRef(null)
 
-  useEffect(() => {
-    refreshHistory()
-  }, [])
+  useEffect(() => { refreshHistory() }, [])
+  useEffect(() => { localStorage.setItem(META_KEY, JSON.stringify(meta)) }, [meta])
 
   async function refreshHistory() {
-    const [texts, images] = await Promise.all([
-      Promise.resolve(loadTextGenerationHistory()),
-      loadImageHistory()
-    ])
+    const [texts, images] = await Promise.all([Promise.resolve(loadTextGenerationHistory()), loadImageHistory()])
     setTextItems(texts)
     setImageItems(images)
   }
 
-  const filteredText = useMemo(() => filterItems(textItems, query), [textItems, query])
-  const filteredImages = useMemo(() => filterItems(imageItems, query), [imageItems, query])
+  const items = useMemo(() => {
+    const normalized = query.trim().toLowerCase()
+    return [
+      ...textItems.map((item) => ({ ...item, kind: 'text' })),
+      ...imageItems.map((item) => ({ ...item, kind: 'image' }))
+    ]
+      .filter((item) => !normalized || [item.prompt, item.response, item.text, item.provider, item.model].filter(Boolean).join(' ').toLowerCase().includes(normalized))
+      .sort((a, b) => Number(Boolean(meta[b.id]?.pinned)) - Number(Boolean(meta[a.id]?.pinned)) || new Date(b.created_at || 0) - new Date(a.created_at || 0))
+  }, [textItems, imageItems, query, meta])
 
-  async function regenerateText(item) {
+  async function regenerate(item) {
     setLoadingId(item.id)
     try {
-      const result = await api('/api/generate/text', {
-        method: 'POST',
-        body: JSON.stringify({
-          provider: item.provider || 'openai',
-          model: item.model || null,
-          prompt: item.prompt,
-          max_tokens: item.max_tokens || 512
-        })
-      })
-      setTextItems(saveTextGenerationHistory({
-        prompt: item.prompt,
-        response: result.text || '',
-        text: result.text || '',
-        provider: result.provider,
-        model: result.model,
-        created_at: new Date().toISOString()
-      }))
+      if (item.kind === 'text') {
+        const result = await api('/api/generate/text', { method: 'POST', body: JSON.stringify({ provider: item.provider || 'openai', model: item.model || null, prompt: item.prompt, max_tokens: item.max_tokens || 512 }) })
+        setTextItems(saveTextGenerationHistory({ prompt: item.prompt, response: result.text || '', text: result.text || '', provider: result.provider, model: result.model, created_at: new Date().toISOString() }))
+      } else {
+        const result = await api('/api/generate/image', { method: 'POST', body: JSON.stringify({ provider: item.provider || 'openai', model: item.model || 'gpt-image-2', prompt: buildStyledPrompt(item.prompt, item.style), size: item.size || '1024x1024', quality: item.quality || 'auto', count: 1 }) })
+        const urls = result.image_urls?.length ? result.image_urls : [result.output_url].filter(Boolean)
+        setImageItems(await addImagesToHistory(urls.map((outputUrl, index) => ({ ...item, id: `${result.id || crypto.randomUUID()}-${index}`, output_url: outputUrl, created_at: new Date().toISOString() }))))
+      }
+    } catch (error) {
+      toast.error(error.message, t('dom.Request failed'))
     } finally {
       setLoadingId('')
     }
   }
 
-  async function regenerateImage(item) {
-    setLoadingId(item.id)
-    try {
-      const result = await api('/api/generate/image', {
-        method: 'POST',
-        body: JSON.stringify({
-          provider: item.provider || 'openai',
-          model: item.model || 'gpt-image-2',
-          prompt: buildStyledPrompt(item.prompt, item.style),
-          size: item.size || '1024x1024',
-          quality: item.quality || 'auto',
-          count: 1
-        })
-      })
-      const imageUrls = result.image_urls?.length ? result.image_urls : [result.output_url].filter(Boolean)
-      const next = await addImagesToHistory(imageUrls.map((outputUrl, index) => ({
-        id: `${result.id || crypto.randomUUID()}-${index}`,
-        prompt: item.prompt,
-        provider: result.provider,
-        model: result.model,
-        size: item.size || '1024x1024',
-        style: item.style || 'auto',
-        quality: item.quality || 'auto',
-        count: '1',
-        status: result.status,
-        output_url: outputUrl,
-        created_at: new Date().toISOString()
-      })))
-      setImageItems(next)
-    } finally {
-      setLoadingId('')
-    }
+  async function remove(item) {
+    if (item.kind === 'text') setTextItems(deleteTextGenerationHistory(item.id))
+    else setImageItems(await deleteImageHistory(item.id))
+    setContextItem(null)
   }
 
-  function deleteText(id) {
-    setTextItems(deleteTextGenerationHistory(id))
-  }
-
-  async function deleteImage(id) {
-    setImageItems(await deleteImageHistory(id))
-  }
-
-  async function shareText(item) {
+  async function share(item) {
     setSharingId(item.id)
     try {
-      await createShareLink({
-        modality: 'text',
-        prompt: item.prompt,
-        text: item.response || item.text || '',
-        provider: item.provider,
-        model: item.model
-      })
-      toast.success('Share URL copied to clipboard.', 'Share link ready')
-    } catch (err) {
-      toast.error(err.message, 'Could not create share link')
+      await createShareLink({ modality: item.kind, prompt: item.prompt, text: item.response || item.text || '', output_url: item.output_url, provider: item.provider, model: item.model })
+      toast.success(t('dom.Share URL copied to clipboard.'), t('dom.Share link ready'))
+    } catch (error) {
+      toast.error(error.message, t('dom.Could not create share link'))
     } finally {
       setSharingId('')
     }
   }
 
-  async function shareImage(item) {
-    setSharingId(item.id)
-    try {
-      await createShareLink({
-        modality: 'image',
-        prompt: item.prompt,
-        output_url: item.output_url,
-        provider: item.provider,
-        model: item.model
-      })
-      toast.success('Share URL copied to clipboard.', 'Share link ready')
-    } catch (err) {
-      toast.error(err.message, 'Could not create share link')
-    } finally {
-      setSharingId('')
-    }
+  function rename(item) {
+    const title = window.prompt(t('dom.Rename conversation'), displayTitle(item, meta))
+    if (title?.trim()) setMeta((current) => ({ ...current, [item.id]: { ...current[item.id], title: title.trim() } }))
+    setContextItem(null)
+  }
+
+  function togglePin(item) {
+    setMeta((current) => ({ ...current, [item.id]: { ...current[item.id], pinned: !current[item.id]?.pinned } }))
+    setContextItem(null)
+  }
+
+  function beginLongPress(item) {
+    window.clearTimeout(longPressTimer.current)
+    longPressTimer.current = window.setTimeout(() => setContextItem(item), 520)
+  }
+
+  function endLongPress() {
+    window.clearTimeout(longPressTimer.current)
   }
 
   return (
-    <div className="history-page space-y-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <div className="native-history-page">
+      <header className="native-history-header">
+        <Link to="/account" className="native-round-button native-profile-button" aria-label={t('nav.account')}><UserCircle /></Link>
         <div>
-          <p className="eyebrow mb-2">Generation Archive</p>
-          <h1 className="title-gradient text-3xl font-bold sm:text-4xl md:text-5xl">History</h1>
-          <p className="muted mt-3 max-w-2xl text-sm">Search saved text responses and locally stored image generations.</p>
+          <p>{t('dom.Your AI memory')}</p>
+          <h1>{t('dom.History')}</h1>
         </div>
-        <div className="history-search">
-          <Search className="h-4 w-4" />
-          <GlassInput placeholder="Search history..." value={query} onChange={(event) => setQuery(event.target.value)} />
-        </div>
+        <button className="native-round-button" type="button" onClick={() => setMenuOpen((value) => !value)} aria-label={t('dom.Menu')}><MoreHorizontal /></button>
+      </header>
+
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div className="native-floating-menu native-view-menu" initial={{ opacity: 0, scale: .88, y: -12 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .9, y: -8 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }}>
+            <MenuButton icon={Grid2X2} label={t('dom.Grid')} active={view === 'grid'} onClick={() => { setView('grid'); setMenuOpen(false) }} />
+            <MenuButton icon={List} label={t('dom.List')} active={view === 'list'} onClick={() => { setView('list'); setMenuOpen(false) }} />
+            <MenuButton icon={Search} label={t('dom.Search')} onClick={() => { setSearchOpen(true); setMenuOpen(false) }} />
+            <MenuButton icon={SlidersHorizontal} label={t('dom.Sort')} onClick={() => setMenuOpen(false)} />
+            <div className="native-menu-theme"><ThemeToggle /></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {searchOpen && (
+          <motion.div className="native-spotlight" initial={{ opacity: 0, y: -18 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -18 }}>
+            <Search />
+            <input autoFocus value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t('dom.Search conversations')} />
+            <button type="button" onClick={() => { setQuery(''); setSearchOpen(false) }}><X /></button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main className={`native-history-grid ${view === 'list' ? 'is-list' : ''}`}>
+        <Link to="/playground" className="native-history-card native-new-card">
+          <span>{formatDay(new Date().toISOString())}</span>
+          <strong>{t('dom.New Conversation')}</strong>
+          <Sparkles />
+        </Link>
+        {items.map((item, index) => (
+          <motion.article
+            layout
+            key={`${item.kind}-${item.id}`}
+            className={`native-history-card native-history-card-${index % 4} ${item.kind === 'image' ? 'has-image' : ''}`}
+            onContextMenu={(event) => { event.preventDefault(); setContextItem(item) }}
+            onPointerDown={() => beginLongPress(item)}
+            onPointerUp={endLongPress}
+            onPointerLeave={endLongPress}
+            initial={{ opacity: 0, y: 28, scale: .96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 125, damping: 22, delay: Math.min(index * .035, .3) }}
+          >
+            {item.output_url && <img src={item.output_url} alt="" />}
+            <div className="native-history-card-content">
+              <span>{meta[item.id]?.pinned ? t('dom.Pinned') : formatDay(item.created_at)}</span>
+              <strong>{displayTitle(item, meta)}</strong>
+              <p>{item.response || item.text || item.prompt}</p>
+            </div>
+            <button type="button" className="native-card-more" onClick={() => setContextItem(item)} aria-label={t('dom.Menu')}><MoreHorizontal /></button>
+          </motion.article>
+        ))}
+      </main>
+
+      <div className="native-history-actions">
+        <button type="button" className="native-round-button" onClick={() => setSearchOpen(true)}><Search /></button>
+        <Link to="/playground" className="native-round-button native-compose-button"><Pencil /></Link>
       </div>
 
-      <HistorySection icon={Type} title="Text" count={filteredText.length}>
-        {filteredText.length === 0 ? (
-          <HistoryEmpty label="No saved text generations" />
-        ) : (
-          <div className="history-card-grid">
-            {filteredText.map((item) => (
-              <TextHistoryCard
-                key={item.id}
-                item={item}
-                loading={loadingId === item.id}
-                sharing={sharingId === item.id}
-                onShare={() => shareText(item)}
-                onRegenerate={() => regenerateText(item)}
-                onDelete={() => deleteText(item.id)}
-              />
-            ))}
+      <AnimatePresence>
+        {contextItem && (
+          <div className="native-modal-scrim" onClick={() => setContextItem(null)}>
+            <motion.div className="native-floating-menu native-context-menu" onClick={(event) => event.stopPropagation()} initial={{ opacity: 0, scale: .82, y: 30 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .88, y: 20 }} transition={{ type: 'spring', stiffness: 280, damping: 25 }}>
+              <MenuButton icon={Pencil} label={t('dom.Rename')} onClick={() => rename(contextItem)} />
+              <MenuButton icon={meta[contextItem.id]?.pinned ? PinOff : Pin} label={meta[contextItem.id]?.pinned ? t('dom.Unpin') : t('dom.Pin')} onClick={() => togglePin(contextItem)} />
+              <MenuButton icon={Copy} label={t('dom.Copy')} onClick={() => navigator.clipboard?.writeText(contextItem.response || contextItem.text || contextItem.output_url || '')} />
+              <MenuButton icon={Share2} label={sharingId === contextItem.id ? t('dom.Sharing') : t('dom.Share')} onClick={() => share(contextItem)} />
+              <MenuButton icon={RefreshCw} label={loadingId === contextItem.id ? t('dom.Generating') : t('dom.Regenerate')} onClick={() => regenerate(contextItem)} />
+              <MenuButton danger icon={Trash2} label={t('dom.Delete')} onClick={() => remove(contextItem)} />
+            </motion.div>
           </div>
         )}
-      </HistorySection>
-
-      <HistorySection icon={Image} title="Images" count={filteredImages.length}>
-        {filteredImages.length === 0 ? (
-          <HistoryEmpty label="No saved image generations" />
-        ) : (
-          <div className="history-image-grid">
-            {filteredImages.map((item) => (
-              <ImageHistoryCard
-                key={item.id}
-                item={item}
-                loading={loadingId === item.id}
-                sharing={sharingId === item.id}
-                onShare={() => shareImage(item)}
-                onRegenerate={() => regenerateImage(item)}
-                onDelete={() => deleteImage(item.id)}
-              />
-            ))}
-          </div>
-        )}
-      </HistorySection>
+      </AnimatePresence>
     </div>
   )
 }
 
-function HistorySection({ icon: Icon, title, count, children }) {
-  return (
-    <GlassCard as="section" className="history-section p-5">
-      <div className="dashboard-section-head mb-4">
-        <div className="flex items-center gap-3">
-          <span className="composer-spark"><Icon className="h-4 w-4" /></span>
-          <div>
-            <p className="eyebrow mb-1">{title}</p>
-            <h2 className="text-xl font-bold text-white">{count} saved</h2>
-          </div>
-        </div>
-        <Sparkles className="h-5 w-5 text-[#00E5FF]" />
-      </div>
-      {children}
-    </GlassCard>
-  )
+function MenuButton({ icon: Icon, label, active, danger, onClick }) {
+  return <button type="button" className={`${active ? 'is-active' : ''} ${danger ? 'is-danger' : ''}`} onClick={onClick}><Icon /><span>{label}</span></button>
 }
 
-function TextHistoryCard({ item, loading, sharing, onShare, onRegenerate, onDelete }) {
-  return (
-    <motion.article className="history-card" initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 140, damping: 24 }}>
-      <div>
-        <p className="history-prompt">{item.prompt}</p>
-        <p className="history-response">{item.response || item.text}</p>
-      </div>
-      <HistoryMeta item={item} />
-      <HistoryActions value={item.response || item.text || ''} loading={loading} sharing={sharing} onShare={onShare} onRegenerate={onRegenerate} onDelete={onDelete} />
-    </motion.article>
-  )
+function displayTitle(item, meta) {
+  if (meta[item.id]?.title) return meta[item.id].title
+  const words = (item.prompt || 'New Conversation').trim().split(/\s+/)
+  return words.slice(0, 5).join(' ')
 }
 
-function ImageHistoryCard({ item, loading, sharing, onShare, onRegenerate, onDelete }) {
-  return (
-    <motion.article className="history-card history-image-card" initial={{ opacity: 0, y: 14, scale: 0.98 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true }} transition={{ type: 'spring', stiffness: 130, damping: 24 }}>
-      <img src={item.output_url} alt={item.prompt} />
-      <div>
-        <p className="history-prompt">{item.prompt}</p>
-        <p className="history-response">{item.size || '1024x1024'} / {item.style || 'auto'} / {item.quality || 'auto'}</p>
-      </div>
-      <HistoryMeta item={item} />
-      <HistoryActions value={item.output_url || ''} loading={loading} sharing={sharing} onShare={onShare} onRegenerate={onRegenerate} onDelete={onDelete} />
-    </motion.article>
-  )
+function readMeta() {
+  try { return JSON.parse(localStorage.getItem(META_KEY) || '{}') } catch { return {} }
 }
 
-function HistoryMeta({ item }) {
-  return (
-    <p className="history-meta">
-      {item.provider || 'provider'} / {item.model || 'model'} / {formatDate(item.created_at)}
-    </p>
-  )
-}
-
-function HistoryActions({ value, loading, sharing, onShare, onRegenerate, onDelete }) {
-  return (
-    <div className="history-actions">
-      <button type="button" onClick={() => navigator.clipboard?.writeText(value)} aria-label="Copy result">
-        <Copy className="h-4 w-4" />
-      </button>
-      <button type="button" onClick={onShare} disabled={sharing} aria-label="Create share link">
-        <Share2 className={`h-4 w-4 ${sharing ? 'animate-pulse' : ''}`} />
-      </button>
-      <button type="button" onClick={onRegenerate} disabled={loading} aria-label="Regenerate">
-        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-      </button>
-      <button type="button" onClick={onDelete} aria-label="Delete">
-        <Trash2 className="h-4 w-4" />
-      </button>
-    </div>
-  )
-}
-
-function HistoryEmpty({ label }) {
-  return <div className="history-empty">{label}</div>
-}
-
-function filterItems(items, query) {
-  const normalized = query.trim().toLowerCase()
-  if (!normalized) return items
-  return items.filter((item) => [
-    item.prompt,
-    item.response,
-    item.text,
-    item.provider,
-    item.model,
-    item.style,
-    item.quality
-  ].filter(Boolean).join(' ').toLowerCase().includes(normalized))
+function formatDay(value) {
+  if (!value) return 'Saved'
+  const date = new Date(value)
+  const now = new Date()
+  if (date.toDateString() === now.toDateString()) return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+  return date.toLocaleDateString(undefined, { weekday: 'long' })
 }
 
 function buildStyledPrompt(prompt, style) {
   const stylePrompt = STYLE_PROMPTS[style]
   return stylePrompt ? `${prompt}\n\nStyle direction: ${stylePrompt}` : prompt
-}
-
-function formatDate(value) {
-  if (!value) return 'saved'
-  return new Date(value).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }

@@ -1,71 +1,47 @@
-import { Check, Clock3, Code2, Copy, Play, Sparkles, TerminalSquare, Zap } from 'lucide-react'
+import { BrainCircuit, Camera, Check, ChevronDown, Code2, Copy, FileText, Globe2, Image as ImageIcon, Languages, Mic, Paperclip, Plus, Search, Send, Sparkles, TerminalSquare, Video, WandSparkles, X } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Link } from 'react-router-dom'
 import { API_URL, api, apiKeyRequest, getToken } from '../api/client'
-import { GlassButton, GlassCard, GlassInput, GlassSelect, GlassTextarea } from '../components/ui'
 import { saveTextGenerationHistory } from '../utils/generationHistory'
 
 const MODEL_CHOICES = [
-  { id: 'gpt-4o-mini', label: 'GPT-4o', provider: 'openai', model: 'gpt-4o-mini' },
-  { id: 'claude', label: 'Claude', provider: 'claude', model: 'claude-haiku-4-5' },
-  { id: 'deepseek', label: 'DeepSeek', provider: 'deepseek', model: 'deepseek-chat' }
+  { id: 'gpt-4o-mini', label: 'GPT-4o', provider: 'openai', model: 'gpt-4o-mini', available: true },
+  { id: 'claude', label: 'Claude', provider: 'claude', model: 'claude-haiku-4-5', available: true },
+  { id: 'deepseek', label: 'DeepSeek', provider: 'deepseek', model: 'deepseek-chat', available: true },
+  { id: 'gemini', label: 'Gemini', available: false },
+  { id: 'grok', label: 'Grok', available: false },
+  { id: 'flux', label: 'Flux', provider: 'flux', model: '', endpoint: 'image', available: true },
+  { id: 'sdxl', label: 'SDXL', available: false }
 ]
 
 const ENDPOINTS = {
-  text: {
-    label: 'Text generation',
-    path: '/api/generate/text',
-    providers: ['openai', 'deepseek', 'claude', 'qwen'],
-    credits: 1,
-    defaults: { prompt: 'Write a concise launch note for a premium AI API platform.', max_tokens: 512 }
-  },
-  image: {
-    label: 'Image generation',
-    path: '/api/generate/image',
-    providers: ['openai', 'flux'],
-    credits: 10,
-    defaults: { prompt: 'A cinematic VisionOS glass console for an AI API platform', size: '1024x1024' }
-  },
-  video: {
-    label: 'Video generation',
-    path: '/api/generate/video',
-    providers: ['runway', 'kling', 'veo'],
-    credits: 50,
-    defaults: { prompt: 'A slow dolly through a glowing glass AI command center', duration_seconds: 5 }
-  }
+  text: { path: '/api/generate/text', credits: 1, defaults: { prompt: '', max_tokens: 512 } },
+  image: { path: '/api/generate/image', credits: 10, defaults: { prompt: '', size: '1024x1024' } },
+  video: { path: '/api/generate/video', credits: 50, defaults: { prompt: '', duration_seconds: 5 } }
 }
 
 export default function Playground() {
+  const { t } = useTranslation()
   const [endpoint, setEndpoint] = useState('text')
-  const config = ENDPOINTS[endpoint]
   const [authMode, setAuthMode] = useState('chat')
   const [selectedModel, setSelectedModel] = useState(MODEL_CHOICES[0].id)
-  const [provider, setProvider] = useState(config.providers[0])
+  const [provider, setProvider] = useState('openai')
   const [model, setModel] = useState(MODEL_CHOICES[0].model)
-  const [prompt, setPrompt] = useState(config.defaults.prompt)
+  const [prompt, setPrompt] = useState('')
   const [apiKey, setApiKey] = useState('')
-  const [requestText, setRequestText] = useState(formatJson(buildPayload(endpoint, config.providers[0], '', config.defaults)))
   const [response, setResponse] = useState(null)
   const [error, setError] = useState('')
-  const [responseTime, setResponseTime] = useState(null)
-  const [creditsUsed, setCreditsUsed] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [copied, setCopied] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [plusOpen, setPlusOpen] = useState(false)
   const [advancedOpen, setAdvancedOpen] = useState(false)
+  const [voiceActive, setVoiceActive] = useState(false)
   const [streamedResponse, setStreamedResponse] = useState('')
 
-  useEffect(() => {
-    const nextConfig = ENDPOINTS[endpoint]
-    const nextProvider = nextConfig.providers[0]
-    setProvider(nextProvider)
-    setModel(endpoint === 'text' ? MODEL_CHOICES[0].model : '')
-    setSelectedModel(endpoint === 'text' ? MODEL_CHOICES[0].id : '')
-    setPrompt(nextConfig.defaults.prompt)
-    setResponse(null)
-    setError('')
-    setResponseTime(null)
-    setCreditsUsed(null)
-    setRequestText(formatJson(buildPayload(endpoint, nextProvider, '', nextConfig.defaults)))
-  }, [endpoint])
+  const config = ENDPOINTS[endpoint]
+  const payload = useMemo(() => buildPayload(endpoint, provider, model, prompt), [endpoint, provider, model, prompt])
 
   useEffect(() => {
     const text = response?.text || ''
@@ -73,309 +49,180 @@ export default function Playground() {
     if (!text) return undefined
     let index = 0
     const timer = window.setInterval(() => {
-      index += Math.max(1, Math.ceil(text.length / 48))
+      index += Math.max(1, Math.ceil(text.length / 56))
       setStreamedResponse(text.slice(0, index))
       if (index >= text.length) window.clearInterval(timer)
-    }, 24)
+    }, 28)
     return () => window.clearInterval(timer)
   }, [response])
 
-  useEffect(() => {
-    setRequestText((current) => {
-      try {
-        const parsed = JSON.parse(current)
-        return formatJson({ ...parsed, provider, model: model.trim() || null, prompt })
-      } catch {
-        return current
-      }
-    })
-  }, [provider, model, prompt])
-
-  function chooseModel(choiceId) {
-    const choice = MODEL_CHOICES.find((item) => item.id === choiceId) || MODEL_CHOICES[0]
-    setEndpoint('text')
+  function chooseModel(choice) {
+    if (!choice.available) return
+    const nextEndpoint = choice.endpoint || 'text'
     setSelectedModel(choice.id)
+    setEndpoint(nextEndpoint)
     setProvider(choice.provider)
-    setModel(choice.model)
+    setModel(choice.model || (nextEndpoint === 'image' ? 'gpt-image-2' : ''))
+    setPlusOpen(false)
   }
 
-  const parsedRequest = useMemo(() => {
-    try {
-      return JSON.parse(requestText)
-    } catch {
-      return null
-    }
-  }, [requestText])
-
-  const snippets = useMemo(() => {
-    const payload = parsedRequest || buildPayload(endpoint, provider, model, config.defaults)
-    return {
-      curl: makeCurl(config.path, payload, authMode),
-      python: makePython(config.path, payload, authMode),
-      javascript: makeJavaScript(config.path, payload, authMode)
-    }
-  }, [authMode, config.path, config.defaults, endpoint, model, parsedRequest, provider])
+  function chooseTool(tool) {
+    if (tool.endpoint) setEndpoint(tool.endpoint)
+    if (tool.prefix) setPrompt((current) => `${tool.prefix}${current}`)
+    if (tool.id === 'voice') setVoiceActive(true)
+    setPlusOpen(false)
+  }
 
   async function sendRequest(event) {
     event.preventDefault()
+    if (!prompt.trim()) return
     setError('')
     setResponse(null)
-    setResponseTime(null)
-    setCreditsUsed(null)
-
-    let payload
-    try {
-      payload = JSON.parse(requestText)
-    } catch {
-      setError('Request body must be valid JSON.')
-      return
-    }
-
     setLoading(true)
     window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'generating' } }))
-    const started = performance.now()
     try {
-      let result
-      if (authMode === 'developer') {
-        const key = apiKey.trim()
-        if (!key) throw new Error('API key is required in Developer API Mode.')
-        result = await apiKeyRequest(config.path, key, payload)
-      } else {
-        result = await sendChatModeRequest(config.path, payload)
-      }
+      const result = authMode === 'developer'
+        ? await sendDeveloperRequest(config.path, apiKey, payload)
+        : await sendChatModeRequest(config.path, payload)
       setResponse(result)
-      if (endpoint === 'text') {
-        saveTextGenerationHistory({
-          prompt: payload.prompt || '',
-          response: result.text || '',
-          text: result.text || '',
-          provider: result.provider || payload.provider,
-          model: result.model || payload.model,
-          created_at: new Date().toISOString()
-        })
-      }
-      setResponseTime(Math.round(performance.now() - started))
-      setCreditsUsed(result.credits_used ?? config.credits)
-    } catch (err) {
-      setError(err.message)
-      setResponseTime(Math.round(performance.now() - started))
+      if (endpoint === 'text') saveTextGenerationHistory({ prompt, response: result.text || '', text: result.text || '', provider: result.provider || provider, model: result.model || model, created_at: new Date().toISOString() })
+    } catch (requestError) {
+      setError(requestError.message)
     } finally {
       setLoading(false)
       window.dispatchEvent(new CustomEvent('ai-status', { detail: { status: 'idle' } }))
     }
   }
 
-  async function copy(label, value) {
-    await navigator.clipboard?.writeText(value)
-    setCopied(label)
-    window.setTimeout(() => setCopied(''), 1400)
+  async function copyResult() {
+    await navigator.clipboard?.writeText(response?.text || response?.output_url || JSON.stringify(response, null, 2))
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1400)
   }
 
   return (
-    <div className="playground-page minimal-playground space-y-6">
-      <div className="flex flex-col gap-4 lg:items-center lg:text-center">
-        <div>
-          <p className="eyebrow mb-2">Create</p>
-          <h1 className="title-gradient text-4xl font-bold sm:text-5xl md:text-6xl">What do you want to make?</h1>
-          <p className="muted mx-auto mt-3 max-w-2xl text-sm">Choose a model, describe the result, and let the platform handle the routing.</p>
+    <div className="native-chat-page">
+      <header className="native-chat-topbar">
+        <Link to="/history" className="native-round-button" aria-label={t('dom.Close')}><X /></Link>
+        <button type="button" className="native-model-capsule" onClick={() => setPlusOpen(true)}>
+          <Sparkles />
+          <span>{MODEL_CHOICES.find((choice) => choice.id === selectedModel)?.label || provider}</span>
+          <ChevronDown />
+        </button>
+        <button type="button" className="native-round-button" onClick={() => setAdvancedOpen((value) => !value)} aria-label={t('dom.Advanced')}><TerminalSquare /></button>
+      </header>
+
+      <main className="native-chat-canvas">
+        {!response && !loading && !error && (
+          <motion.div className="native-chat-idle" initial={{ opacity: 0, scale: .94 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: .8 }}>
+            <div className="native-orb"><Sparkles /></div>
+            <h1>{t('dom.Ask anything')}</h1>
+            <p>{t('dom.Create text, images, video, code, and more.')}</p>
+          </motion.div>
+        )}
+        {loading && <Thinking />}
+        {error && <motion.div className="native-chat-error" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>{error}</motion.div>}
+        {response && (
+          <motion.article className="native-ai-response" initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}>
+            <div className="native-response-head"><span><Sparkles /> AI</span><button type="button" onClick={copyResult}>{copied ? <Check /> : <Copy />}</button></div>
+            {response.output_url && <img src={response.output_url} alt={prompt} />}
+            {response.image_urls?.map((url) => <img key={url} src={url} alt={prompt} />)}
+            <p>{streamedResponse || response.text || response.message || JSON.stringify(response, null, 2)}</p>
+          </motion.article>
+        )}
+      </main>
+
+      <form className="native-chat-composer" onSubmit={sendRequest}>
+        <button type="button" className="native-round-button" onClick={() => setPlusOpen((value) => !value)} aria-label={t('dom.Add')}><Plus /></button>
+        <div className="native-chat-input-wrap">
+          <textarea rows="1" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={t('dom.Ask anything')} />
+          <span>{endpoint}</span>
         </div>
-      </div>
+        {prompt.trim() ? (
+          <button type="submit" disabled={loading} className="native-round-button native-send-button" aria-label={t('dom.Send')}><Send /></button>
+        ) : (
+          <button type="button" className={`native-round-button native-voice-button ${voiceActive ? 'is-active' : ''}`} onClick={() => setVoiceActive((value) => !value)} aria-label={t('dom.Voice')}><Mic /></button>
+        )}
+      </form>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(320px,0.62fr)]">
-        <GlassCard as="form" className="playground-console" onSubmit={sendRequest}>
-          <div className="playground-toolbar">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <span className="composer-spark"><TerminalSquare className="h-4 w-4" /></span>
-              Prompt
-            </div>
-            <button className="advanced-toggle" type="button" onClick={() => setAdvancedOpen((current) => !current)}>
-              {advancedOpen ? 'Hide Advanced' : 'Advanced'}
-            </button>
-          </div>
-
-          <GlassTextarea
-            className="playground-editor minimal-prompt-editor"
-            value={prompt}
-            onChange={(event) => setPrompt(event.target.value)}
-            placeholder="Ask for launch copy, API docs, image prompt ideas, provider routing logic..."
-          />
-
-          <div className="minimal-model-section">
-            <p className="eyebrow">Model</p>
-            <div className="minimal-model-grid" role="radiogroup" aria-label="Model">
-              {MODEL_CHOICES.map((choice) => (
-                <button
-                  key={choice.id}
-                  type="button"
-                  className={selectedModel === choice.id ? 'is-active' : ''}
-                  onClick={() => chooseModel(choice.id)}
-                >
-                  {choice.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {advancedOpen && (
-            <div className="playground-advanced-panel">
-              <div className="playground-mode-toggle" role="tablist" aria-label="Playground authentication mode">
-                <button type="button" role="tab" aria-selected={authMode === 'chat'} className={authMode === 'chat' ? 'is-active' : ''} onClick={() => setAuthMode('chat')}>
-                  Chat Mode
-                </button>
-                <button type="button" role="tab" aria-selected={authMode === 'developer'} className={authMode === 'developer' ? 'is-active' : ''} onClick={() => setAuthMode('developer')}>
-                  Developer API Mode
-                </button>
-              </div>
-              <p className="playground-auth-note">
-                {authMode === 'chat'
-                  ? 'Uses your logged-in session automatically. No API key required.'
-                  : 'Sends requests exactly like an external developer using X-API-Key.'}
-              </p>
-
-              <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.8fr)_minmax(0,0.9fr)]">
-                <GlassSelect value={endpoint} options={endpointOptions()} onChange={(event) => setEndpoint(event.target.value)} />
-                <GlassSelect value={provider} options={config.providers} onChange={(event) => setProvider(event.target.value)} />
-                <GlassInput placeholder="Model override" value={model} onChange={(event) => setModel(event.target.value)} />
-              </div>
-
-              {authMode === 'developer' && (
-                <GlassInput
-                  placeholder="Developer API key, e.g. ai_..."
-                  value={apiKey}
-                  onChange={(event) => setApiKey(event.target.value)}
-                />
-              )}
-
-              <label className="playground-editor-label" htmlFor="playground-request">Request JSON</label>
-              <GlassTextarea
-                id="playground-request"
-                className="playground-editor"
-                spellCheck="false"
-                wrap="soft"
-                value={requestText}
-                onChange={(event) => setRequestText(event.target.value)}
-              />
-            </div>
-          )}
-
-          <div className="sticky-action-row flex flex-wrap items-center justify-between gap-3">
-            <div className="flex flex-wrap gap-2">
-              <MetricPill icon={Zap} label={`${config.credits} credits`} />
-              {responseTime !== null && <MetricPill icon={Clock3} label={`${responseTime} ms`} />}
-            </div>
-            <GlassButton type="submit" disabled={loading || !parsedRequest}>
-              <Play className="h-4 w-4" />
-              {loading ? 'Generating' : 'Generate'}
-            </GlassButton>
-          </div>
-          {!parsedRequest && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">Invalid JSON in request editor.</p>}
-          {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
-        </GlassCard>
-
-        <div className="space-y-5">
-          <GlassCard className="playground-response p-5">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <p className="eyebrow mb-2">Response</p>
-                <h2 className="text-xl font-semibold text-white">{response ? 'Your result' : 'Ready when you are'}</h2>
-              </div>
-              <GlassButton variant="ghost" size="icon" onClick={() => copy('response', formatJson(response || { status: 'waiting' }))} aria-label="Copy response">
-                {copied === 'response' ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              </GlassButton>
-            </div>
-            <div className="playground-metrics">
-              <MetricPill icon={Clock3} label={responseTime === null ? 'No response yet' : `${responseTime} ms`} />
-              <MetricPill icon={Zap} label={creditsUsed === null ? '0 credits' : `${creditsUsed} credits used`} />
-            </div>
-            <pre className={`playground-json ${response?.text ? 'is-text-response' : ''} ${loading ? 'is-thinking' : ''}`}>
-              {loading ? 'Thinking…' : streamedResponse || formatJson(response || { status: 'Your generated result will appear here.' })}
-            </pre>
-          </GlassCard>
-
-          {advancedOpen && (
-            <GlassCard className="p-5">
-              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-                <span className="composer-spark"><Code2 className="h-4 w-4" /></span>
-                Copy snippets
-              </div>
-              <div className="grid gap-3">
-                <SnippetButton label="Copy curl" copied={copied === 'curl'} onClick={() => copy('curl', snippets.curl)} />
-                <SnippetButton label="Copy Python" copied={copied === 'python'} onClick={() => copy('python', snippets.python)} />
-                <SnippetButton label="Copy JavaScript" copied={copied === 'javascript'} onClick={() => copy('javascript', snippets.javascript)} />
-              </div>
-            </GlassCard>
-          )}
-        </div>
-      </div>
+      <AnimatePresence>
+        {plusOpen && <PlusPanel selectedModel={selectedModel} onModel={chooseModel} onTool={chooseTool} onClose={() => setPlusOpen(false)} t={t} />}
+        {advancedOpen && <AdvancedSheet authMode={authMode} setAuthMode={setAuthMode} apiKey={apiKey} setApiKey={setApiKey} payload={payload} response={response} onClose={() => setAdvancedOpen(false)} t={t} />}
+      </AnimatePresence>
     </div>
   )
 }
 
+function PlusPanel({ selectedModel, onModel, onTool, onClose, t }) {
+  const tools = [
+    { id: 'image', label: t('dom.Image Generation'), icon: ImageIcon, endpoint: 'image' },
+    { id: 'video', label: t('dom.Video Generation'), icon: Video, endpoint: 'video' },
+    { id: 'voice', label: t('dom.Voice'), icon: Mic },
+    { id: 'code', label: t('dom.Code'), icon: Code2, prefix: 'Write production-ready code for: ' },
+    { id: 'translate', label: t('dom.Translate'), icon: Languages, prefix: 'Translate this naturally: ' },
+    { id: 'analyze', label: t('dom.Analyze'), icon: BrainCircuit, prefix: 'Analyze this carefully: ' },
+    { id: 'search', label: t('dom.Search Web'), icon: Globe2, prefix: 'Research and summarize: ' }
+  ]
+  return (
+    <div className="native-modal-scrim native-plus-scrim" onClick={onClose}>
+      <motion.section className="native-plus-panel" onClick={(event) => event.stopPropagation()} initial={{ opacity: 0, y: 50, scale: .92 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 40, scale: .94 }} transition={{ type: 'spring', stiffness: 230, damping: 24 }}>
+        <div className="native-panel-handle" />
+        <div className="native-attach-row">
+          <ToolButton icon={Camera} label={t('dom.Camera')} />
+          <ToolButton icon={ImageIcon} label={t('dom.Photos')} />
+          <ToolButton icon={FileText} label={t('dom.Files')} />
+        </div>
+        <h2>{t('dom.AI Models')}</h2>
+        <div className="native-model-grid">
+          {MODEL_CHOICES.map((choice) => <button key={choice.id} type="button" disabled={!choice.available} className={selectedModel === choice.id ? 'is-active' : ''} onClick={() => onModel(choice)}><WandSparkles /><span>{choice.label}</span>{!choice.available && <small>{t('dom.Coming soon')}</small>}</button>)}
+        </div>
+        <h2>{t('dom.AI Tools')}</h2>
+        <div className="native-tool-grid">
+          {tools.map((tool) => <button key={tool.id} type="button" onClick={() => onTool(tool)}><tool.icon /><span>{tool.label}</span></button>)}
+        </div>
+      </motion.section>
+    </div>
+  )
+}
+
+function ToolButton({ icon: Icon, label }) {
+  return <button type="button"><Icon /><span>{label}</span></button>
+}
+
+function AdvancedSheet({ authMode, setAuthMode, apiKey, setApiKey, payload, response, onClose, t }) {
+  return (
+    <div className="native-modal-scrim" onClick={onClose}>
+      <motion.section className="native-advanced-sheet" onClick={(event) => event.stopPropagation()} initial={{ opacity: 0, x: 40 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 40 }}>
+        <div className="native-response-head"><strong>{t('dom.Advanced')}</strong><button type="button" onClick={onClose}><X /></button></div>
+        <div className="native-segmented">
+          <button type="button" className={authMode === 'chat' ? 'is-active' : ''} onClick={() => setAuthMode('chat')}>{t('dom.Chat Mode')}</button>
+          <button type="button" className={authMode === 'developer' ? 'is-active' : ''} onClick={() => setAuthMode('developer')}>{t('dom.Developer API Mode')}</button>
+        </div>
+        {authMode === 'developer' && <input value={apiKey} onChange={(event) => setApiKey(event.target.value)} placeholder="ai_..." />}
+        <h3>{t('dom.Request')}</h3><pre>{JSON.stringify(payload, null, 2)}</pre>
+        <h3>{t('dom.Response')}</h3><pre>{JSON.stringify(response || { status: 'waiting' }, null, 2)}</pre>
+        <p>{API_URL}</p>
+      </motion.section>
+    </div>
+  )
+}
+
+function Thinking() {
+  return <div className="native-thinking"><Sparkles /><span /><span /><span /></div>
+}
+
+function buildPayload(endpoint, provider, model, prompt) {
+  if (endpoint === 'image') return { provider: provider === 'flux' ? 'flux' : 'openai', model: model || 'gpt-image-2', prompt, size: '1024x1024', quality: 'auto', count: 1 }
+  if (endpoint === 'video') return { provider: 'runway', prompt, duration_seconds: 5 }
+  return { provider, model: model || null, prompt, max_tokens: 512 }
+}
+
 async function sendChatModeRequest(path, payload) {
-  if (!getToken()) {
-    throw new Error('Please log in again to use Chat Mode. Developer API Mode is only for manual X-API-Key testing.')
-  }
-  return api(path, {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  })
+  if (!getToken()) throw new Error('Please log in again to use Chat Mode. Developer API Mode is only for manual X-API-Key testing.')
+  return api(path, { method: 'POST', body: JSON.stringify(payload) })
 }
 
-function buildPayload(endpoint, provider, model, defaults) {
-  return {
-    provider,
-    model: model.trim() || null,
-    ...defaults
-  }
-}
-
-function endpointOptions() {
-  return Object.entries(ENDPOINTS).map(([value, endpoint]) => ({ value, label: endpoint.label }))
-}
-
-function formatJson(value) {
-  return JSON.stringify(value, null, 2)
-}
-
-function authHeader(mode) {
-  return mode === 'developer'
-    ? { name: 'X-API-Key', value: '$AI_API_KEY', python: '"X-API-Key": AI_API_KEY', javascript: '"X-API-Key": AI_API_KEY' }
-    : { name: 'Authorization', value: 'Bearer $JWT_TOKEN', python: '"Authorization": f"Bearer {JWT_TOKEN}"', javascript: '"Authorization": `Bearer ${JWT_TOKEN}`' }
-}
-
-function makeCurl(path, payload, mode) {
-  const header = authHeader(mode)
-  return `curl -X POST ${API_URL}${path} \\\n  -H "Content-Type: application/json" \\\n  -H "${header.name}: ${header.value}" \\\n  -d '${shellSingleQuote(JSON.stringify(payload))}'`
-}
-
-function makePython(path, payload, mode) {
-  const header = authHeader(mode)
-  return `import json\nimport requests\n\npayload = json.loads('''${formatJson(payload)}''')\n\nresponse = requests.post(\n    "${API_URL}${path}",\n    headers={"Content-Type": "application/json", ${header.python}},\n    json=payload\n)\nprint(response.json())`
-}
-
-function makeJavaScript(path, payload, mode) {
-  const header = authHeader(mode)
-  return `const response = await fetch("${API_URL}${path}", {\n  method: "POST",\n  headers: {\n    "Content-Type": "application/json",\n    ${header.javascript}\n  },\n  body: JSON.stringify(${formatJson(payload).replaceAll('\n', '\n  ')})\n});\n\nconsole.log(await response.json());`
-}
-
-function shellSingleQuote(value) {
-  return value.replaceAll("'", "'\"'\"'")
-}
-
-function MetricPill({ icon: Icon, label }) {
-  return (
-    <span className="playground-metric">
-      <Icon className="h-3.5 w-3.5" />
-      {label}
-    </span>
-  )
-}
-
-function SnippetButton({ label, copied, onClick }) {
-  return (
-    <button className="snippet-copy" type="button" onClick={onClick}>
-      <span>{label}</span>
-      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-    </button>
-  )
+async function sendDeveloperRequest(path, key, payload) {
+  if (!key.trim()) throw new Error('API key is required in Developer API Mode.')
+  return apiKeyRequest(path, key.trim(), payload)
 }

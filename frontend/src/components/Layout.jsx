@@ -22,6 +22,8 @@ export default function Layout() {
   const { user } = useAuth()
   const { t } = useTranslation()
   const location = useLocation()
+  const isChatRoute = location.pathname === '/playground'
+  const isHistoryRoute = location.pathname === '/history'
   const [creditsRemaining, setCreditsRemaining] = useState(user?.credits_remaining ?? null)
 
   useEffect(() => {
@@ -31,7 +33,7 @@ export default function Layout() {
   }, [location.pathname])
 
   return (
-    <div className="page-shell">
+    <div className={`page-shell ${isChatRoute ? 'is-chat-route' : ''} ${isHistoryRoute ? 'is-history-route' : ''}`}>
       <CommandPalette />
       <header className="spatial-header">
         <div className="spatial-header-inner">
