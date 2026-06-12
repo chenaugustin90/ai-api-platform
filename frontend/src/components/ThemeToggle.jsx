@@ -8,6 +8,7 @@ export function applyTheme(theme) {
   const nextTheme = theme === 'light' ? 'light' : 'dark'
   document.body.classList.toggle('theme-light', nextTheme === 'light')
   document.documentElement.style.colorScheme = nextTheme
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', nextTheme === 'light' ? '#f6f6f4' : '#050505')
   localStorage.setItem(THEME_KEY, nextTheme)
   window.dispatchEvent(new CustomEvent('theme-change', { detail: { theme: nextTheme } }))
 }

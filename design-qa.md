@@ -9,17 +9,19 @@
   - `design-evidence/history-mobile-final.png`
   - `design-evidence/chat-plus-mobile-final.png`
 - Viewport: 430 x 932
-- State: authenticated mobile app, dark History menu and Chat Plus panel
+- State: authenticated native app shell, dark History home, Chat Plus panel, Profile hub, and native authentication flow
 
 **Full-view comparison evidence**
 
-The source and implementation were reviewed at the same mobile viewport. The implementation matches the source's dominant composition: near-black full-screen canvas, oversized rounded conversation tiles, floating circular actions, a glass view menu, and a bottom-sheet-style AI tool selector.
+The source and implementation were reviewed at the same mobile viewport. The implementation matches the source's dominant composition: near-black full-screen canvas, oversized rounded conversation tiles, floating circular actions, a glass view menu, and a bottom-sheet-style AI tool selector. The product architecture now opens as an app rather than a marketing website or admin dashboard.
 
 **Focused region comparison evidence**
 
 - History header and view menu: matched circular controls, compact floating menu, subdued glass border, large SF-style title, and generous black space.
 - Chat Plus panel: matched bottom floating panel, attachment row, large rounded cells, restrained dark palette, and low-contrast layered glass.
 - Light theme: checked separately in-browser; it uses a clean warm-white canvas, gray typography, subtle borders, and white glass rather than simple color inversion.
+- App architecture: `/dashboard` is the native History home, `/playground` is the immersive chat/create surface, and `/account` is the grouped Profile and membership hub.
+- Preserved product depth: detailed Account, provider health, usage, billing, and the former workspace dashboard remain available through Settings instead of competing with the primary creation experience.
 
 **Required fidelity surfaces**
 
@@ -39,6 +41,9 @@ No actionable P0, P1, or P2 mismatches remain.
 - Added true dark/light native surfaces.
 - Added masonry History cards, Spotlight search, view menu, context actions, and profile entry.
 - Added Siri-style Chat canvas, floating composer, model selector, attachment tools, AI tools, voice state, and advanced developer sheet.
+- Added a native Profile hub with credits, subscription, billing, API key, documentation, theme, language, and sign-out entry points.
+- Replaced the legacy authentication composition with a focused black/white native app access flow.
+- Added standalone PWA metadata, safe-area viewport support, and app-aware theme colors.
 - Preserved existing generation, JWT authentication, history storage, sharing, and API request behavior.
 
 **Follow-up polish**

@@ -4,8 +4,10 @@ import { RouterProvider, createBrowserRouter } from 'react-router-dom'
 import './styles.css'
 import './native-app.css'
 import './native-v2.css'
+import './native-v3.css'
 import './i18n'
 import I18nTextSync from './components/I18nTextSync'
+import AppEntry from './components/AppEntry'
 import Layout from './components/Layout'
 import LiquidGlassEffects from './components/LiquidGlassEffects'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -26,6 +28,7 @@ const PromptLibrary = lazy(() => import('./pages/PromptLibrary'))
 const Pricing = lazy(() => import('./pages/Pricing'))
 const PaymentCancel = lazy(() => import('./pages/PaymentCancel'))
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
+const Profile = lazy(() => import('./pages/Profile'))
 const Register = lazy(() => import('./pages/Register'))
 const SharedPreview = lazy(() => import('./pages/SharedPreview'))
 const Settings = lazy(() => import('./pages/Settings'))
@@ -39,7 +42,8 @@ if (getStoredTheme() === 'light') {
 }
 
 const router = createBrowserRouter([
-  { path: '/', element: <Landing /> },
+  { path: '/', element: <AppEntry /> },
+  { path: '/welcome', element: <Landing /> },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
   { path: '/share/:id', element: <SharedPreview /> },
@@ -50,7 +54,7 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     ),
     children: [
-      { path: '/dashboard', element: <Dashboard /> },
+      { path: '/dashboard', element: <History home /> },
       { path: '/api-keys', element: <ApiKeys /> },
       { path: '/pricing', element: <Pricing /> },
       { path: '/billing/success', element: <PaymentSuccess /> },
@@ -59,12 +63,14 @@ const router = createBrowserRouter([
       { path: '/playground', element: <Playground /> },
       { path: '/prompt-library', element: <PromptLibrary /> },
       { path: '/history', element: <History /> },
-      { path: '/account', element: <Account /> },
+      { path: '/account', element: <Profile /> },
       { path: '/docs', element: <Docs /> },
       { path: '/images', element: <ImageGeneration /> },
       { path: '/videos', element: <VideoGeneration /> },
       { path: '/usage', element: <Usage /> },
       { path: '/settings', element: <Settings /> },
+      { path: '/settings/account', element: <Account /> },
+      { path: '/settings/workspace', element: <Dashboard /> },
       { path: '/settings/providers', element: <ProviderSettings /> }
     ]
   }

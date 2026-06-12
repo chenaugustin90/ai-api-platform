@@ -96,7 +96,7 @@ export default function Pricing() {
           <p className="muted mt-2">One payment · {plan.duration_days} days · {Number(plan.credits).toLocaleString()} credits</p>
           <div className="my-6 space-y-3">
             {['Real AI providers', 'Text and image generation', 'API key access', 'No automatic renewal'].map((item) => (
-              <p key={item} className="flex items-center gap-2 text-sm text-white"><Check className="h-4 w-4 text-[#00E5FF]" /> {item}</p>
+              <p key={item} className="flex items-center gap-2 text-sm text-white"><Check className="h-4 w-4 text-white" /> {item}</p>
             ))}
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -123,7 +123,7 @@ export default function Pricing() {
       <GlassModal open={Boolean(method)} title={`Pay with ${method === 'wechat' ? 'WeChat' : 'Zelle'}`} onClose={() => setMethod('')}>
         <div className="space-y-5">
           <div className="manual-payment-destination">
-            <ShieldCheck className="h-5 w-5 text-[#00E5FF]" />
+            <ShieldCheck className="h-5 w-5 text-white" />
             <div>
               <p className="eyebrow mb-1">Send exactly ${(plan.amount_cents / 100).toFixed(2)}</p>
               <p className="text-sm text-white">

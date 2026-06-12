@@ -7,7 +7,8 @@ const settingsLinks = [
   { label: 'Pricing', text: 'Plans, checkout, credits, and subscription options.', href: '/pricing', icon: CreditCard },
   { label: 'Usage', text: 'Usage timeline, provider spend, and credit analytics.', href: '/usage', icon: BarChart3 },
   { label: 'Upgrade', text: 'Credit limits, plan comparison, and upgrade options.', href: '/upgrade', icon: Sparkles },
-  { label: 'Account', text: 'Profile, subscription status, billing history, and keys.', href: '/account', icon: UserCircle },
+  { label: 'Account', text: 'Profile, subscription status, billing history, and keys.', href: '/settings/account', icon: UserCircle },
+  { label: 'Workspace', text: 'Generation console, recent activity, and operational overview.', href: '/settings/workspace', icon: Sparkles },
   { label: 'Billing', text: 'Payment success, cancellation, and customer portal flows.', href: '/pricing', icon: WalletCards }
 ]
 

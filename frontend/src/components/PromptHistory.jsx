@@ -41,7 +41,7 @@ export default function PromptHistory({ storageKey, examples = [], onReuse }) {
     <div className="prompt-history">
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-white">
-          <Clock3 className="h-4 w-4 text-[#00E5FF]" />
+          <Clock3 className="h-4 w-4 text-white" />
           Prompt history
         </div>
         <span className="text-xs text-[#A1A1AA]">{items.length}/{MAX_PROMPTS}</span>
@@ -67,7 +67,7 @@ export default function PromptHistory({ storageKey, examples = [], onReuse }) {
         </div>
       ) : (
         <div className="prompt-history-empty">
-          <Sparkles className="h-4 w-4 text-[#00E5FF]" />
+          <Sparkles className="h-4 w-4 text-white" />
           <p>No prompts yet. Try an example below.</p>
         </div>
       )}

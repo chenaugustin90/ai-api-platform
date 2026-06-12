@@ -18,7 +18,7 @@ const STYLE_PROMPTS = {
   minimal: 'Minimal Apple VisionOS liquid glass aesthetic, airy composition, subtle translucency.'
 }
 
-export default function History() {
+export default function History({ home = false }) {
   const { t } = useTranslation()
   const toast = useToast()
   const [textItems, setTextItems] = useState([])
@@ -113,8 +113,8 @@ export default function History() {
       <header className="native-history-header">
         <Link to="/account" className="native-round-button native-profile-button" aria-label={t('nav.account')}><UserCircle /></Link>
         <div>
-          <p>{t('dom.Your AI memory')}</p>
-          <h1>{t('dom.History')}</h1>
+          <p>{home ? t('dom.Your AI space') : t('dom.Your AI memory')}</p>
+          <h1>{home ? t('dom.Home') : t('dom.History')}</h1>
         </div>
         <button className="native-round-button" type="button" onClick={() => setMenuOpen((value) => !value)} aria-label={t('dom.Menu')}><MoreHorizontal /></button>
       </header>

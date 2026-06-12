@@ -106,7 +106,7 @@ export default function CommandPalette() {
     <div className="command-backdrop" role="presentation" onClick={() => setOpen(false)}>
       <GlassCard className="command-palette" role="dialog" aria-modal="true" aria-label="Command palette" onClick={(event) => event.stopPropagation()}>
         <div className="command-search">
-          <Search className="h-4 w-4 text-[#00E5FF]" />
+          <Search className="h-4 w-4 text-white" />
           <GlassInput autoFocus placeholder="Search actions..." value={query} onChange={(event) => setQuery(event.target.value)} />
           <GlassButton variant="ghost" size="icon" onClick={() => setOpen(false)} aria-label="Close command palette">
             <X className="h-4 w-4" />

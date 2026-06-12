@@ -1,14 +1,11 @@
-import { History as HistoryIcon, Image, KeyRound, MessageSquareText, Sparkles, UserCircle, Zap } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { FileCode2, History as HistoryIcon, Image, KeyRound, Menu, MessageSquareText, Settings, Sparkles, UserCircle } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { api } from '../api/client'
 import { useAuth } from '../context/AuthContext'
-import AiStatusIndicator from './AiStatusIndicator'
 import CommandPalette from './CommandPalette'
-import LanguageSwitcher from './LanguageSwitcher'
-import ThemeToggle from './ThemeToggle'
 
 const dockLinks = [
   ['nav.chat', '/dashboard', MessageSquareText],
@@ -23,8 +20,9 @@ export default function Layout() {
   const { t } = useTranslation()
   const location = useLocation()
   const isChatRoute = location.pathname === '/playground'
-  const isHistoryRoute = location.pathname === '/history'
+  const isHistoryRoute = location.pathname === '/history' || location.pathname === '/dashboard'
   const [creditsRemaining, setCreditsRemaining] = useState(user?.credits_remaining ?? null)
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     api('/api/usage/summary')
@@ -35,31 +33,26 @@ export default function Layout() {
   return (
     <div className={`page-shell ${isChatRoute ? 'is-chat-route' : ''} ${isHistoryRoute ? 'is-history-route' : ''}`}>
       <CommandPalette />
-      <header className="spatial-header">
-        <div className="spatial-header-inner">
-          <Link to="/dashboard" className="group flex items-center gap-3 text-lg font-bold text-white transition duration-300 hover:scale-[1.02]">
-            <span className="spatial-brand-mark" data-magnetic>
-              <KeyRound className="h-5 w-5 text-[#00E5FF]" />
-            </span>
-            <span className="title-gradient brand-full">AI API Platform</span>
-            <span className="title-gradient brand-short">AI API</span>
-          </Link>
-          <div className="flex min-w-0 items-center gap-2 text-sm sm:gap-3">
-            <AiStatusIndicator />
-            <ThemeToggle className="spatial-header-theme" />
-            {creditsRemaining !== null && (
-              <span className="header-credit-pill hidden items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 font-semibold text-cyan-50 sm:inline-flex">
-                <Zap className="h-3.5 w-3.5 text-[#00E5FF]" />
-                {Number(creditsRemaining).toLocaleString()} {t('nav.credits')}
-              </span>
-            )}
-            <LanguageSwitcher className="spatial-header-language" />
-            <Link to="/account" className="spatial-profile-link" aria-label={user?.email || t('nav.account')} data-magnetic>
-              <UserCircle className="h-5 w-5" />
-            </Link>
+      {!isChatRoute && !isHistoryRoute && (
+        <header className="native-app-header">
+          <Link to="/account" className="native-app-profile" aria-label={user?.email || t('nav.account')}><UserCircle /></Link>
+          <Link to="/dashboard" className="native-app-wordmark"><KeyRound /><span>AI</span></Link>
+          <button type="button" className="native-app-menu-button" onClick={() => setMenuOpen((value) => !value)} aria-label={t('dom.Menu')}><Menu /></button>
+        </header>
+      )}
+      <AnimatePresence>
+        {menuOpen && (
+          <div className="native-modal-scrim" onClick={() => setMenuOpen(false)}>
+            <motion.nav className="native-app-menu" onClick={(event) => event.stopPropagation()} initial={{ opacity: 0, scale: .9, y: -16 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: .94, y: -8 }} transition={{ type: 'spring', stiffness: 260, damping: 24 }}>
+              <Link to="/docs" onClick={() => setMenuOpen(false)}><FileCode2 />{t('nav.apiDocs')}</Link>
+              <Link to="/api-keys" onClick={() => setMenuOpen(false)}><KeyRound />{t('nav.apiKeys')}</Link>
+              <Link to="/settings" onClick={() => setMenuOpen(false)}><Settings />{t('dom.Settings')}</Link>
+              <Link to="/pricing" onClick={() => setMenuOpen(false)}><Sparkles />{t('nav.pricing')}</Link>
+              {creditsRemaining !== null && <span>{Number(creditsRemaining).toLocaleString()} {t('nav.credits')}</span>}
+            </motion.nav>
           </div>
-        </div>
-      </header>
+        )}
+      </AnimatePresence>
       <div className="app-layout spatial-app-layout">
         <motion.main
           key={location.pathname}

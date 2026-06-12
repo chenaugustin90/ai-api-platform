@@ -30,14 +30,14 @@ export default function Register() {
   return (
     <AuthFrame title="Register" aside="Launch a credit-metered AI platform with provider routing built in.">
       <form className="space-y-4" onSubmit={submit}>
-        <GlassInput placeholder="Full name" autoComplete="name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
-        <GlassInput placeholder="Email" autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-        <GlassInput placeholder="Password" type="password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <GlassInput placeholder={t('dom.Full name')} autoComplete="name" value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} />
+        <GlassInput placeholder={t('dom.Email')} autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+        <GlassInput placeholder={t('dom.Password')} type="password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
         <GlassButton type="submit" className="w-full" disabled={submitting}>{submitting ? t('dom.Creating account...') : t('dom.Create account')}</GlassButton>
         <div className="authkit-form-links">
-          <span>Already registered?</span>
-          <Link to="/login">Login</Link>
+          <span>{t('dom.Already registered?')}</span>
+          <Link to="/login">{t('dom.Login')}</Link>
         </div>
       </form>
     </AuthFrame>

@@ -132,7 +132,7 @@ export default function PromptLibrary() {
         <GlassCard className="p-5">
           <div className="prompt-library-filters">
             <div className="prompt-search">
-              <Search className="h-4 w-4 text-[#00E5FF]" />
+              <Search className="h-4 w-4 text-white" />
               <GlassInput placeholder="Search prompts..." value={query} onChange={(event) => setQuery(event.target.value)} />
             </div>
             <GlassSelect

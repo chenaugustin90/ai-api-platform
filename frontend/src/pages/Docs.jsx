@@ -169,14 +169,14 @@ function EndpointSection({ endpoint }) {
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div>
           <div className="mb-3 flex flex-wrap items-center gap-2">
-            <span className="lg-pill text-xs font-bold text-[#00E5FF]">{endpoint.method}</span>
+            <span className="lg-pill text-xs font-bold text-white">{endpoint.method}</span>
             <code className="docs-path">{endpoint.path}</code>
             <span className="docs-auth-pill">{endpoint.auth}</span>
           </div>
           <h2 className="text-2xl font-bold text-white">{endpoint.title}</h2>
           <p className="muted mt-2 max-w-2xl text-sm">{endpoint.description}</p>
         </div>
-        <FileCode2 className="hidden h-6 w-6 text-[#00E5FF] md:block" />
+        <FileCode2 className="hidden h-6 w-6 text-white md:block" />
       </div>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">

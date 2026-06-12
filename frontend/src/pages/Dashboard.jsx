@@ -585,7 +585,7 @@ function CreditsTrendChart({ creditsRemaining, events }) {
           <p className="eyebrow mb-1">Credits trend</p>
           <h2 className="text-xl font-bold text-white">{Number(creditsRemaining).toLocaleString()} remaining</h2>
         </div>
-        <Zap className="h-5 w-5 text-[#00E5FF]" />
+        <Zap className="h-5 w-5 text-white" />
       </div>
       <svg className="credits-trend-chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="Credits trend chart">
         <path d={`${path} L 100 100 L 0 100 Z`} className="credits-trend-fill" />
@@ -606,7 +606,7 @@ function RecentGenerations({ items }) {
           <p className="eyebrow mb-1">Recent generations</p>
           <h2 className="text-xl font-bold text-white">Latest activity</h2>
         </div>
-        <Clock3 className="h-5 w-5 text-[#00E5FF]" />
+        <Clock3 className="h-5 w-5 text-white" />
       </div>
       {items.length === 0 ? (
         <EmptyState
@@ -766,7 +766,7 @@ function DashboardGenerator({ generator, history, error, loading, progress, resu
         />
         <div className="dashboard-generator-side">
           <div className="dashboard-generator-preview">
-            <Wand2 className="h-5 w-5 text-[#00E5FF]" />
+            <Wand2 className="h-5 w-5 text-white" />
             <p className="text-sm font-semibold text-white">Ready route</p>
             <p className="muted text-xs">{generator.provider} / {generator.model}</p>
           </div>
@@ -852,7 +852,7 @@ function CheckoutSuccess({ tier, mode }) {
           {mode === 'mock' ? ' in mock mode' : ''}
         </p>
       </div>
-      <Sparkles className="h-4 w-4 text-[#00E5FF]" />
+      <Sparkles className="h-4 w-4 text-white" />
     </div>
   )
 }
@@ -915,7 +915,7 @@ function DashboardBillingHistory({ records }) {
           <p className="eyebrow mb-1">Payment history</p>
           <h2 className="text-xl font-bold text-white">Billing activity</h2>
         </div>
-        <CreditCard className="h-5 w-5 text-[#00E5FF]" />
+        <CreditCard className="h-5 w-5 text-white" />
       </div>
       {visibleRecords.length === 0 ? (
         <p className="muted text-sm">No billing records yet.</p>
