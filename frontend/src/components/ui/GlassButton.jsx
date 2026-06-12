@@ -12,7 +12,7 @@ export default function GlassButton({
   const buttonProps = Component === 'button' ? { type: type || 'button' } : {}
 
   return (
-    <Component className={cn('lg-button', `lg-button-${variant}`, `lg-button-${size}`, className)} {...buttonProps} {...props}>
+    <Component data-magnetic className={cn('lg-button', `lg-button-${variant}`, `lg-button-${size}`, className)} {...buttonProps} {...props}>
       {children}
     </Component>
   )

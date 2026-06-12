@@ -1,6 +1,6 @@
 import { BrainCircuit, Camera, Check, ChevronDown, Code2, Copy, FileText, Globe2, Image as ImageIcon, Languages, Mic, Paperclip, Plus, Search, Send, Sparkles, TerminalSquare, Video, WandSparkles, X } from 'lucide-react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { API_URL, api, apiKeyRequest, getToken } from '../api/client'
@@ -39,6 +39,11 @@ export default function Playground() {
   const [advancedOpen, setAdvancedOpen] = useState(false)
   const [voiceActive, setVoiceActive] = useState(false)
   const [streamedResponse, setStreamedResponse] = useState('')
+  const [attachments, setAttachments] = useState([])
+  const cameraRef = useRef(null)
+  const photosRef = useRef(null)
+  const filesRef = useRef(null)
+  const recognitionRef = useRef(null)
 
   const config = ENDPOINTS[endpoint]
   const payload = useMemo(() => buildPayload(endpoint, provider, model, prompt), [endpoint, provider, model, prompt])
@@ -69,8 +74,58 @@ export default function Playground() {
   function chooseTool(tool) {
     if (tool.endpoint) setEndpoint(tool.endpoint)
     if (tool.prefix) setPrompt((current) => `${tool.prefix}${current}`)
-    if (tool.id === 'voice') setVoiceActive(true)
+    if (tool.id === 'voice') toggleVoice()
     setPlusOpen(false)
+  }
+
+  function attach(kind) {
+    const refs = { camera: cameraRef, photos: photosRef, files: filesRef }
+    refs[kind]?.current?.click()
+  }
+
+  async function receiveFiles(event) {
+    const selected = Array.from(event.target.files || [])
+    if (!selected.length) return
+    const next = await Promise.all(selected.map(async (file) => {
+      const isText = file.type.startsWith('text/') || /\.(md|txt|json|js|jsx|ts|tsx|py|css|html)$/i.test(file.name)
+      const content = isText ? await file.text().catch(() => '') : ''
+      return { id: crypto.randomUUID(), name: file.name, type: file.type, size: file.size, content: content.slice(0, 12000) }
+    }))
+    setAttachments((current) => [...current, ...next].slice(0, 8))
+    const readable = next.filter((item) => item.content)
+    if (readable.length) {
+      setPrompt((current) => `${current}${current ? '\n\n' : ''}${readable.map((item) => `[${item.name}]\n${item.content}`).join('\n\n')}`)
+    }
+    event.target.value = ''
+  }
+
+  function toggleVoice() {
+    if (voiceActive) {
+      recognitionRef.current?.stop?.()
+      setVoiceActive(false)
+      return
+    }
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SpeechRecognition) {
+      setError(t('dom.Voice input is not supported in this browser.'))
+      return
+    }
+    const recognition = new SpeechRecognition()
+    recognition.lang = navigator.language || 'en-US'
+    recognition.interimResults = true
+    recognition.continuous = false
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results).map((result) => result[0]?.transcript || '').join('')
+      setPrompt(transcript)
+    }
+    recognition.onend = () => setVoiceActive(false)
+    recognition.onerror = (event) => {
+      setVoiceActive(false)
+      setError(event.error === 'not-allowed' ? t('dom.Microphone permission was denied.') : t('dom.Voice input could not start.'))
+    }
+    recognitionRef.current = recognition
+    setVoiceActive(true)
+    recognition.start()
   }
 
   async function sendRequest(event) {
@@ -133,6 +188,18 @@ export default function Playground() {
       </main>
 
       <form className="native-chat-composer" onSubmit={sendRequest}>
+        <input ref={cameraRef} className="native-file-input" type="file" accept="image/*" capture="environment" onChange={receiveFiles} />
+        <input ref={photosRef} className="native-file-input" type="file" accept="image/*" multiple onChange={receiveFiles} />
+        <input ref={filesRef} className="native-file-input" type="file" multiple onChange={receiveFiles} />
+        {attachments.length > 0 && (
+          <div className="native-attachment-strip">
+            {attachments.map((item) => (
+              <button type="button" key={item.id} onClick={() => setAttachments((current) => current.filter((attachment) => attachment.id !== item.id))}>
+                <Paperclip /><span>{item.name}</span><X />
+              </button>
+            ))}
+          </div>
+        )}
         <button type="button" className="native-round-button" onClick={() => setPlusOpen((value) => !value)} aria-label={t('dom.Add')}><Plus /></button>
         <div className="native-chat-input-wrap">
           <textarea rows="1" value={prompt} onChange={(event) => setPrompt(event.target.value)} placeholder={t('dom.Ask anything')} />
@@ -141,19 +208,19 @@ export default function Playground() {
         {prompt.trim() ? (
           <button type="submit" disabled={loading} className="native-round-button native-send-button" aria-label={t('dom.Send')}><Send /></button>
         ) : (
-          <button type="button" className={`native-round-button native-voice-button ${voiceActive ? 'is-active' : ''}`} onClick={() => setVoiceActive((value) => !value)} aria-label={t('dom.Voice')}><Mic /></button>
+          <button type="button" className={`native-round-button native-voice-button ${voiceActive ? 'is-active' : ''}`} onClick={toggleVoice} aria-label={t('dom.Voice')}><Mic /></button>
         )}
       </form>
 
       <AnimatePresence>
-        {plusOpen && <PlusPanel selectedModel={selectedModel} onModel={chooseModel} onTool={chooseTool} onClose={() => setPlusOpen(false)} t={t} />}
+        {plusOpen && <PlusPanel selectedModel={selectedModel} onModel={chooseModel} onTool={chooseTool} onAttach={attach} onClose={() => setPlusOpen(false)} t={t} />}
         {advancedOpen && <AdvancedSheet authMode={authMode} setAuthMode={setAuthMode} apiKey={apiKey} setApiKey={setApiKey} payload={payload} response={response} onClose={() => setAdvancedOpen(false)} t={t} />}
       </AnimatePresence>
     </div>
   )
 }
 
-function PlusPanel({ selectedModel, onModel, onTool, onClose, t }) {
+function PlusPanel({ selectedModel, onModel, onTool, onAttach, onClose, t }) {
   const tools = [
     { id: 'image', label: t('dom.Image Generation'), icon: ImageIcon, endpoint: 'image' },
     { id: 'video', label: t('dom.Video Generation'), icon: Video, endpoint: 'video' },
@@ -168,9 +235,9 @@ function PlusPanel({ selectedModel, onModel, onTool, onClose, t }) {
       <motion.section className="native-plus-panel" onClick={(event) => event.stopPropagation()} initial={{ opacity: 0, y: 50, scale: .92 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 40, scale: .94 }} transition={{ type: 'spring', stiffness: 230, damping: 24 }}>
         <div className="native-panel-handle" />
         <div className="native-attach-row">
-          <ToolButton icon={Camera} label={t('dom.Camera')} />
-          <ToolButton icon={ImageIcon} label={t('dom.Photos')} />
-          <ToolButton icon={FileText} label={t('dom.Files')} />
+          <ToolButton icon={Camera} label={t('dom.Camera')} onClick={() => { onAttach('camera'); onClose() }} />
+          <ToolButton icon={ImageIcon} label={t('dom.Photos')} onClick={() => { onAttach('photos'); onClose() }} />
+          <ToolButton icon={FileText} label={t('dom.Files')} onClick={() => { onAttach('files'); onClose() }} />
         </div>
         <h2>{t('dom.AI Models')}</h2>
         <div className="native-model-grid">
@@ -185,8 +252,8 @@ function PlusPanel({ selectedModel, onModel, onTool, onClose, t }) {
   )
 }
 
-function ToolButton({ icon: Icon, label }) {
-  return <button type="button"><Icon /><span>{label}</span></button>
+function ToolButton({ icon: Icon, label, onClick }) {
+  return <button type="button" onClick={onClick}><Icon /><span>{label}</span></button>
 }
 
 function AdvancedSheet({ authMode, setAuthMode, apiKey, setApiKey, payload, response, onClose, t }) {

@@ -89,5 +89,7 @@ function formatApiError(data) {
 function friendlyError(message) {
   if (message === 'Email already registered') return 'This email is already registered. Please log in or use a different email.'
   if (message === 'Invalid email or password') return 'Invalid email or password. Please check your credentials and try again.'
+  if (message === 'Current password is incorrect') return 'The current password is incorrect.'
+  if (message === 'New password must be different') return 'Choose a password you have not already used.'
   return message
 }

@@ -1,4 +1,5 @@
 import { CheckCircle2, Info, Loader2, XCircle } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
 import { createContext, useCallback, useContext, useMemo, useState } from 'react'
 
 const ToastContext = createContext(null)
@@ -27,7 +28,9 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={value}>
       {children}
       <div className="toast-stack" aria-live="polite" aria-atomic="true">
-        {toasts.map((toast) => <Toast key={toast.id} toast={toast} />)}
+        <AnimatePresence initial={false}>
+          {toasts.map((toast) => <Toast key={toast.id} toast={toast} />)}
+        </AnimatePresence>
       </div>
     </ToastContext.Provider>
   )
@@ -42,7 +45,14 @@ export function useToast() {
 function Toast({ toast }) {
   const Icon = toast.type === 'success' ? CheckCircle2 : toast.type === 'error' ? XCircle : toast.type === 'loading' ? Loader2 : Info
   return (
-    <div className={`app-toast toast-${toast.type}`}>
+    <motion.div
+      layout
+      className={`app-toast toast-${toast.type}`}
+      initial={{ opacity: 0, y: -18, scale: .92, filter: 'blur(8px)' }}
+      animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+      exit={{ opacity: 0, y: -12, scale: .96, filter: 'blur(6px)' }}
+      transition={{ type: 'spring', stiffness: 250, damping: 25 }}
+    >
       <span className="app-toast-icon">
         <Icon className={toast.type === 'loading' ? 'h-4 w-4 animate-spin' : 'h-4 w-4'} />
       </span>
@@ -50,6 +60,6 @@ function Toast({ toast }) {
         <strong>{toast.title}</strong>
         {toast.message && <small>{toast.message}</small>}
       </span>
-    </div>
+    </motion.div>
   )
 }

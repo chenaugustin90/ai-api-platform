@@ -44,7 +44,20 @@ export function AuthProvider({ children }) {
     setUser(null)
   }
 
-  const value = useMemo(() => ({ user, loading, login, register, logout, refreshUser }), [user, loading])
+  async function updateProfile(full_name) {
+    const updated = await api('/api/auth/me', { method: 'PATCH', body: JSON.stringify({ full_name }) })
+    setUser(updated)
+    return updated
+  }
+
+  async function changePassword(current_password, new_password) {
+    return api('/api/auth/change-password', {
+      method: 'POST',
+      body: JSON.stringify({ current_password, new_password })
+    })
+  }
+
+  const value = useMemo(() => ({ user, loading, login, register, logout, refreshUser, updateProfile, changePassword }), [user, loading])
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

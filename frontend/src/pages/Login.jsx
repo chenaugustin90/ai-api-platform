@@ -35,9 +35,10 @@ export default function Login() {
         <GlassInput placeholder="Password" type="password" autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
         <GlassButton type="submit" className="w-full" disabled={submitting}>{submitting ? t('dom.Signing in...') : t('dom.Login')}</GlassButton>
-        <p className="text-sm text-[#A1A1AA]">
-          Need an account? <Link className="font-semibold text-[#00E5FF] transition hover:text-white" to="/register">Register</Link>
-        </p>
+        <div className="authkit-form-links">
+          <span>Need an account?</span>
+          <Link to="/register">Register</Link>
+        </div>
       </form>
     </AuthFrame>
   )

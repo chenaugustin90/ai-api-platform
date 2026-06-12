@@ -35,9 +35,10 @@ export default function Register() {
         <GlassInput placeholder="Password" type="password" autoComplete="new-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         {error && <p className="lg-alert lg-alert-error px-4 py-3 text-sm">{error}</p>}
         <GlassButton type="submit" className="w-full" disabled={submitting}>{submitting ? t('dom.Creating account...') : t('dom.Create account')}</GlassButton>
-        <p className="text-sm text-[#A1A1AA]">
-          Already registered? <Link className="font-semibold text-[#00E5FF] transition hover:text-white" to="/login">Login</Link>
-        </p>
+        <div className="authkit-form-links">
+          <span>Already registered?</span>
+          <Link to="/login">Login</Link>
+        </div>
       </form>
     </AuthFrame>
   )

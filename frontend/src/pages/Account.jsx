@@ -1,15 +1,15 @@
-import { AlertTriangle, BarChart3, Camera, Check, Copy, CreditCard, ExternalLink, KeyRound, Plus, Settings, ShieldCheck, Trash2, UserCircle } from 'lucide-react'
+import { AlertTriangle, BarChart3, Camera, Check, Copy, CreditCard, ExternalLink, KeyRound, LockKeyhole, Pencil, Plus, Save, Settings, ShieldCheck, Trash2, UserCircle, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../api/client'
-import { GlassButton, GlassCard, GlassInput } from '../components/ui'
+import { GlassButton, GlassCard, GlassInput, GlassModal } from '../components/ui'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../context/AuthContext'
 
 const AVATAR_KEY = 'ai_platform_avatar'
 
 export default function Account() {
-  const { user } = useAuth()
+  const { user, updateProfile, changePassword } = useAuth()
   const toast = useToast()
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '')
   const [dashboard, setDashboard] = useState(null)
@@ -23,6 +23,12 @@ export default function Account() {
   const [creating, setCreating] = useState(false)
   const [revokingId, setRevokingId] = useState(null)
   const [openingPortal, setOpeningPortal] = useState(false)
+  const [editingProfile, setEditingProfile] = useState(false)
+  const [profileName, setProfileName] = useState(user?.full_name || '')
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [passwordOpen, setPasswordOpen] = useState(false)
+  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' })
+  const [savingPassword, setSavingPassword] = useState(false)
 
   const activeKeys = useMemo(() => keys.filter((key) => key.is_active).length, [keys])
   const billing = dashboard?.billing || {
@@ -67,6 +73,40 @@ export default function Account() {
       toast.success('Avatar updated')
     }
     reader.readAsDataURL(file)
+  }
+
+  async function saveProfile(event) {
+    event.preventDefault()
+    if (!profileName.trim()) return
+    setSavingProfile(true)
+    try {
+      await updateProfile(profileName.trim())
+      setEditingProfile(false)
+      toast.success('Profile updated')
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setSavingProfile(false)
+    }
+  }
+
+  async function savePassword(event) {
+    event.preventDefault()
+    if (passwords.next !== passwords.confirm) {
+      toast.error('New passwords do not match')
+      return
+    }
+    setSavingPassword(true)
+    try {
+      await changePassword(passwords.current, passwords.next)
+      setPasswords({ current: '', next: '', confirm: '' })
+      setPasswordOpen(false)
+      toast.success('Password updated')
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setSavingPassword(false)
+    }
   }
 
   async function createKey(event) {
@@ -156,8 +196,23 @@ export default function Account() {
           </div>
           <div className="account-profile-copy">
             <p className="eyebrow mb-2">Profile</p>
-            <h2>{user?.full_name || 'AI Platform user'}</h2>
+            {editingProfile ? (
+              <form className="account-profile-editor" onSubmit={saveProfile}>
+                <GlassInput autoFocus value={profileName} onChange={(event) => setProfileName(event.target.value)} aria-label="Full name" />
+                <GlassButton type="submit" size="icon" disabled={savingProfile || !profileName.trim()} aria-label="Save profile"><Save className="h-4 w-4" /></GlassButton>
+                <GlassButton type="button" variant="ghost" size="icon" onClick={() => { setEditingProfile(false); setProfileName(user?.full_name || '') }} aria-label="Cancel editing"><X className="h-4 w-4" /></GlassButton>
+              </form>
+            ) : (
+              <div className="account-profile-name-row">
+                <h2>{user?.full_name || 'AI Platform user'}</h2>
+                <button type="button" onClick={() => setEditingProfile(true)} aria-label="Edit profile"><Pencil className="h-4 w-4" /></button>
+              </div>
+            )}
             <p>{user?.email}</p>
+            <button type="button" className="account-security-link" onClick={() => setPasswordOpen(true)}>
+              <LockKeyhole className="h-4 w-4" />
+              Change password
+            </button>
           </div>
         </GlassCard>
 
@@ -272,6 +327,19 @@ export default function Account() {
           {keys.length === 0 && <div className="api-key-empty">No API keys yet.</div>}
         </div>
       </GlassCard>
+
+      <GlassModal open={passwordOpen} title="Change password" onClose={() => setPasswordOpen(false)}>
+        <form className="account-password-form" onSubmit={savePassword}>
+          <p>Use at least 8 characters. Your existing sessions stay signed in.</p>
+          <GlassInput type="password" autoComplete="current-password" placeholder="Current password" value={passwords.current} onChange={(event) => setPasswords((current) => ({ ...current, current: event.target.value }))} />
+          <GlassInput type="password" autoComplete="new-password" placeholder="New password" value={passwords.next} onChange={(event) => setPasswords((current) => ({ ...current, next: event.target.value }))} />
+          <GlassInput type="password" autoComplete="new-password" placeholder="Confirm new password" value={passwords.confirm} onChange={(event) => setPasswords((current) => ({ ...current, confirm: event.target.value }))} />
+          <GlassButton type="submit" className="w-full" disabled={savingPassword || passwords.current.length < 1 || passwords.next.length < 8 || passwords.confirm.length < 8}>
+            <LockKeyhole className="h-4 w-4" />
+            {savingPassword ? 'Updating' : 'Update password'}
+          </GlassButton>
+        </form>
+      </GlassModal>
     </div>
   )
 }
