@@ -1,6 +1,6 @@
 {
-  "name": "AI API Platform",
-  "short_name": "AI",
+  "name": "APIsForge",
+  "short_name": "APIsForge",
   "description": "A native-feeling AI workspace for text, image, video, and API workflows.",
   "start_url": "/",
   "display": "standalone",

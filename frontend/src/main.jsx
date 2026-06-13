@@ -10,6 +10,7 @@ import I18nTextSync from './components/I18nTextSync'
 import AppEntry from './components/AppEntry'
 import Layout from './components/Layout'
 import LiquidGlassEffects from './components/LiquidGlassEffects'
+import NativeRuntime from './components/NativeRuntime'
 import ProtectedRoute from './components/ProtectedRoute'
 import { getStoredTheme } from './components/ThemeToggle'
 import { ToastProvider } from './components/ToastProvider'
@@ -26,6 +27,7 @@ const Playground = lazy(() => import('./pages/Playground'))
 const ProviderSettings = lazy(() => import('./pages/ProviderSettings'))
 const PromptLibrary = lazy(() => import('./pages/PromptLibrary'))
 const Pricing = lazy(() => import('./pages/Pricing'))
+const Privacy = lazy(() => import('./pages/Privacy'))
 const PaymentCancel = lazy(() => import('./pages/PaymentCancel'))
 const PaymentSuccess = lazy(() => import('./pages/PaymentSuccess'))
 const Profile = lazy(() => import('./pages/Profile'))
@@ -46,6 +48,7 @@ const router = createBrowserRouter([
   { path: '/welcome', element: <Landing /> },
   { path: '/login', element: <Login /> },
   { path: '/register', element: <Register /> },
+  { path: '/privacy', element: <Privacy /> },
   { path: '/share/:id', element: <SharedPreview /> },
   {
     element: (
@@ -81,6 +84,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <AuthProvider>
       <ToastProvider>
         <I18nTextSync />
+        <NativeRuntime />
         <LiquidGlassEffects />
         <Suspense fallback={<div className="app-route-loading"><span /></div>}>
           <RouterProvider router={router} />

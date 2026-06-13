@@ -5,11 +5,12 @@ import { api } from '../api/client'
 import { GlassButton, GlassCard, GlassInput, GlassModal } from '../components/ui'
 import { useToast } from '../components/ToastProvider'
 import { useAuth } from '../context/AuthContext'
+import { isNativeApp } from '../utils/nativeApp'
 
 const AVATAR_KEY = 'ai_platform_avatar'
 
 export default function Account() {
-  const { user, updateProfile, changePassword } = useAuth()
+  const { user, updateProfile, changePassword, deleteAccount } = useAuth()
   const toast = useToast()
   const [avatar, setAvatar] = useState(() => localStorage.getItem(AVATAR_KEY) || '')
   const [dashboard, setDashboard] = useState(null)
@@ -29,6 +30,9 @@ export default function Account() {
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' })
   const [savingPassword, setSavingPassword] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deletePassword, setDeletePassword] = useState('')
+  const [deletingAccount, setDeletingAccount] = useState(false)
 
   const activeKeys = useMemo(() => keys.filter((key) => key.is_active).length, [keys])
   const billing = dashboard?.billing || {
@@ -37,6 +41,7 @@ export default function Account() {
     credits_remaining: user?.credits_remaining || 0,
     missing_payment_config: []
   }
+  const nativeApp = isNativeApp()
 
   useEffect(() => {
     loadAccount()
@@ -106,6 +111,19 @@ export default function Account() {
       toast.error(error.message)
     } finally {
       setSavingPassword(false)
+    }
+  }
+
+  async function removeAccount(event) {
+    event.preventDefault()
+    setDeletingAccount(true)
+    try {
+      await deleteAccount(deletePassword)
+      window.location.href = '/login'
+    } catch (error) {
+      toast.error(error.message)
+    } finally {
+      setDeletingAccount(false)
     }
   }
 
@@ -229,15 +247,15 @@ export default function Account() {
             <span style={{ width: `${Math.min(100, Math.max(6, ((billing.credits_remaining || 0) / 100000) * 100))}%` }} />
           </div>
           {billing.next_billing_date && <p className="mt-3 text-sm">Next billing date {formatDate(billing.next_billing_date)}</p>}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <GlassButton as="a" href="/pricing" variant="secondary">Manage plan</GlassButton>
+          {!nativeApp && <div className="mt-4 flex flex-wrap gap-2">
+            <GlassButton as={Link} to="/pricing" variant="secondary">Manage plan</GlassButton>
             {billing.customer_portal_available && (
               <GlassButton type="button" variant="secondary" onClick={openCustomerPortal} disabled={openingPortal}>
                 <ExternalLink className="h-4 w-4" />
                 {openingPortal ? 'Opening' : 'Customer portal'}
               </GlassButton>
             )}
-          </div>
+          </div>}
         </GlassCard>
       </div>
 
@@ -328,6 +346,16 @@ export default function Account() {
         </div>
       </GlassCard>
 
+      <GlassCard as="section" className="p-5">
+        <p className="eyebrow mb-1">Privacy</p>
+        <h2 className="text-xl font-semibold text-white">Account and data</h2>
+        <p className="muted mt-2 text-sm">Permanently delete your account, API keys, generation history, usage records, and billing records.</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <GlassButton as={Link} to="/privacy" variant="secondary">Privacy policy</GlassButton>
+          <GlassButton type="button" variant="secondary" onClick={() => setDeleteOpen(true)}><Trash2 className="h-4 w-4" /> Delete account</GlassButton>
+        </div>
+      </GlassCard>
+
       <GlassModal open={passwordOpen} title="Change password" onClose={() => setPasswordOpen(false)}>
         <form className="account-password-form" onSubmit={savePassword}>
           <p>Use at least 8 characters. Your existing sessions stay signed in.</p>
@@ -337,6 +365,17 @@ export default function Account() {
           <GlassButton type="submit" className="w-full" disabled={savingPassword || passwords.current.length < 1 || passwords.next.length < 8 || passwords.confirm.length < 8}>
             <LockKeyhole className="h-4 w-4" />
             {savingPassword ? 'Updating' : 'Update password'}
+          </GlassButton>
+        </form>
+      </GlassModal>
+
+      <GlassModal open={deleteOpen} title="Delete account" onClose={() => setDeleteOpen(false)}>
+        <form className="account-password-form" onSubmit={removeAccount}>
+          <p>This permanently deletes your account and associated data. This action cannot be undone.</p>
+          <GlassInput type="password" autoComplete="current-password" placeholder="Current password" value={deletePassword} onChange={(event) => setDeletePassword(event.target.value)} />
+          <GlassButton type="submit" className="w-full" disabled={deletingAccount || deletePassword.length < 1}>
+            <Trash2 className="h-4 w-4" />
+            {deletingAccount ? 'Deleting' : 'Permanently delete account'}
           </GlassButton>
         </form>
       </GlassModal>

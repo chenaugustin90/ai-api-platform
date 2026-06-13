@@ -2,8 +2,10 @@ import { Check, CheckCircle2, Clock3, Copy, Loader2, MessageCircle, ShieldCheck,
 import { useEffect, useState } from 'react'
 import { api } from '../api/client'
 import { GlassButton, GlassCard, GlassModal, GlassTextarea } from '../components/ui'
+import { isNativeApp } from '../utils/nativeApp'
 
 export default function Pricing() {
+  const nativeApp = isNativeApp()
   const [config, setConfig] = useState(null)
   const [orders, setOrders] = useState([])
   const [adminOrders, setAdminOrders] = useState([])
@@ -71,6 +73,24 @@ export default function Pricing() {
   }
 
   const plan = config?.plan || { amount_cents: 999, credits: 5000, duration_days: 30 }
+
+  if (nativeApp) {
+    return (
+      <div className="space-y-8">
+        <header>
+          <p className="eyebrow mb-2">Membership</p>
+          <h1 className="title-gradient text-3xl font-bold sm:text-4xl">Your APIsForge plan</h1>
+          <p className="muted mt-2 max-w-2xl text-sm">Membership purchases are not currently available inside the iOS app.</p>
+        </header>
+        <GlassCard className="manual-plan-card p-6">
+          <span className="pricing-plan-icon"><Zap className="h-5 w-5" /></span>
+          <p className="eyebrow mt-5">Current access</p>
+          <h2 className="mt-2 text-3xl font-bold text-white">{config?.current_tier || 'Free'}</h2>
+          <p className="muted mt-2">You can continue using your existing account, credits, and active membership in the app.</p>
+        </GlassCard>
+      </div>
+    )
+  }
 
   async function copyZelle() {
     await navigator.clipboard.writeText(config?.zelle_contact || '')

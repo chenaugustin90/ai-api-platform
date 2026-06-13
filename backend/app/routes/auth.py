@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user
 from app.core.security import create_access_token, hash_password, verify_password
 from app.db.session import get_db
-from app.models import User
-from app.schemas.auth import ChangePasswordRequest, LoginRequest, RegisterRequest, TokenResponse, UpdateProfileRequest, UserResponse
+from app.models import ManualPaymentOrder, User
+from app.schemas.auth import ChangePasswordRequest, DeleteAccountRequest, LoginRequest, RegisterRequest, TokenResponse, UpdateProfileRequest, UserResponse
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -60,4 +60,13 @@ def change_password(payload: ChangePasswordRequest, user: User = Depends(get_cur
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New password must be different")
     user.hashed_password = hash_password(payload.new_password)
     db.add(user)
+    db.commit()
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(payload: DeleteAccountRequest, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not verify_password(payload.current_password, user.hashed_password):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Current password is incorrect")
+    db.query(ManualPaymentOrder).filter(ManualPaymentOrder.user_id == user.id).delete(synchronize_session=False)
+    db.delete(user)
     db.commit()

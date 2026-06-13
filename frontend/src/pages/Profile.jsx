@@ -7,6 +7,7 @@ import { api } from '../api/client'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import ThemeToggle from '../components/ThemeToggle'
 import { useAuth } from '../context/AuthContext'
+import { isNativeApp } from '../utils/nativeApp'
 
 const profileLinks = [
   { href: '/pricing', label: 'Membership', detail: 'Plans and payment', icon: CreditCard },
@@ -34,6 +35,7 @@ export default function Profile() {
 
   const billing = summary?.billing || user || {}
   const usage = summary?.usage || {}
+  const links = isNativeApp() ? profileLinks.filter((item) => item.href !== '/pricing') : profileLinks
 
   return (
     <div className="native-profile-page">
@@ -57,11 +59,11 @@ export default function Profile() {
           <strong>{Number(usage.credits_remaining ?? billing.credits_remaining ?? 0).toLocaleString()}</strong>
           <span>{Number(usage.total_events || 0).toLocaleString()} {t('dom.Requests').toLocaleLowerCase()}</span>
         </div>
-        <Link to="/pricing"><Sparkles /> {t('dom.Upgrade')}</Link>
+        {!isNativeApp() && <Link to="/pricing"><Sparkles /> {t('dom.Upgrade')}</Link>}
       </section>
 
       <section className="native-settings-list">
-        {profileLinks.map(({ href, label, detail, icon: Icon }, index) => (
+        {links.map(({ href, label, detail, icon: Icon }, index) => (
           <motion.div key={href} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * .045 }}>
             <Link to={href}>
               <span className="native-settings-icon"><Icon /></span>
